@@ -1,80 +1,110 @@
 <?php
 // data_logic.php - 数据生成和模拟逻辑
 
-// 引入数据库配置和连接
+// 引入数据库配置和连接文件
+// 这将使 $pdo 变量在当前文件中可用
 require_once 'config.php';
 
-// 获取 ISO 周数 (PHP 8.0+ 支持 DateTime::format('W'))
-// 对于旧版本PHP，可能需要自定义函数或第三方库
+/**
+ * 获取 ISO 周数。
+ *
+ * @param DateTime $date 要计算周数的日期对象。
+ * @return int ISO 周数。
+ */
 function getIsoWeek(DateTime $date) {
-    $date->setTime(0, 0, 0);
-    $date->modify('+3 days'); // Thursday in current week decides the year.
-    $week1 = new DateTime($date->format('Y') . '-01-04');
-    return 1 + floor(($date->getTimestamp() - $week1->getTimestamp()) / 604800);
+    $date->setTime(0, 0, 0); // 将时间设置为午夜，确保日期一致性
+    $date->modify('+3 days'); // 调整到当前周的星期四，决定了年份的周数
+    $week1 = new DateTime($date->format('Y') . '-01-04'); // 定义该年份的第一个周四
+    // 计算当前日期与该年份第一个周四之间相隔的周数
+    return 1 + floor(($date->getTimestamp() - $week1->getTimestamp()) / 604800); // 604800 秒 = 1 周
 }
 
-// --- 生成近24周数据函数 (当前周至前24周) ---
+/**
+ * 生成近24周的周数和模拟续保率数据。
+ *
+ * @param DateTime $currentDate 当前日期对象。
+ * @return array 包含 'weeks' (周数标签) 和 'rates' (模拟续保率) 的数组。
+ */
 function generateRecentWeeklyData(DateTime $currentDate) {
     $weeks = [];
     $rates = [];
-    $tempDate = clone $currentDate; // Copy current date
+    $tempDate = clone $currentDate; // 复制当前日期，避免修改原对象
 
-    for ($i = 0; $i < 24; $i++) {
+    for ($i = 0; $i < 24; $i++) { // 修复了循环变量
         $year = $tempDate->format('Y');
         $weekNum = getIsoWeek($tempDate);
-        array_unshift($weeks, "{$year}-W{$weekNum}"); // Add to the beginning to keep chronological order
+        // 将周数标签添加到数组的开头，以保持时间顺序（从旧到新）
+        array_unshift($weeks, "{$year}-W{$weekNum}");
 
-        // Simulate random but somewhat trending rates
-        $randomRate = rand(65, 95); // Random between 65% and 95%
-        array_unshift($rates, $randomRate); // Add to the beginning
+        // 模拟随机但有趋势的续保率（例如 65% 到 95% 之间）
+        $randomRate = rand(65, 95);
+        array_unshift($rates, $randomRate); // 将续保率添加到数组的开头
 
-        // Move to the previous week
+        // 移动到前一周
         $tempDate->modify('-7 days');
     }
     return ['weeks' => $weeks, 'rates' => $rates];
 }
 
-// --- 生成近12个月数据函数 ---
+/**
+ * 生成近12个月的月份标签和模拟续保率数据。
+ *
+ * @param DateTime $currentDate 当前日期对象。
+ * @return array 包含 'months' (月份标签) 和 'rates' (模拟续保率) 的数组。
+ */
 function generateRecentMonthlyData(DateTime $currentDate) {
     $months = [];
     $rates = [];
-    $d = new DateTime($currentDate->format('Y-m-01')); // Start from beginning of current month
+    // 从当前月份的第一天开始
+    $d = new DateTime($currentDate->format('Y-m-01'));
 
     for ($i = 0; $i < 12; $i++) {
+        // 将月份标签添加到数组的开头，以保持时间顺序
         array_unshift($months, $d->format('Y-m'));
-        // Simulate rates, keeping them distinct for each month
-        array_unshift($rates, rand(70, 90)); // Random rates between 70% and 90%
-        $d->modify('-1 month'); // Move to previous month
+        // 模拟续保率（例如 70% 到 90% 之间）
+        array_unshift($rates, rand(70, 90));
+        // 移动到前一个月
+        $d->modify('-1 month');
     }
     return ['months' => $months, 'rates' => $rates];
 }
 
-// --- 生成当前日期与上年同期数据对比 (当前日期至前30天) ---
+/**
+ * 生成当前日期与上年同期近30天的对比数据。
+ *
+ * @param DateTime $currentDate 当前日期对象。
+ * @return array 包含 'dates' (日期标签), 'currentYear' (本年数据), 'lastYear' (上年数据) 的数组。
+ */
 function generateYearOnYearDailyComparisonData(DateTime $currentDate) {
     $dates = [];
     $currentYearData = [];
     $lastYearData = [];
 
-    $tempDate = clone $currentDate; // Copy current date
+    $tempDate = clone $currentDate; // 复制当前日期
 
-    // Go back 30 days
+    // 回溯 30 天
     for ($i = 0; $i < 30; $i++) {
-        array_unshift($dates, $tempDate->format('Y-m-d')); // Add to the beginning for chronological order
+        // 将日期标签添加到数组的开头
+        array_unshift($dates, $tempDate->format('Y-m-d'));
 
-        // Simulate data for current year
+        // 模拟本年数据
         array_unshift($currentYearData, rand(500, 700));
 
-        // Simulate data for last year (random between 400-600)
+        // 模拟去年同期数据
         array_unshift($lastYearData, rand(400, 600));
 
-        // Move to the previous day
+        // 移动到前一天
         $tempDate->modify('-1 day');
     }
-
     return ['dates' => $dates, 'currentYear' => $currentYearData, 'lastYear' => $lastYearData];
 }
 
-// --- 生成近30天每日算单量数据函数 ---
+/**
+ * 生成近30天每日算单量数据。
+ *
+ * @param DateTime $currentDate 当前日期对象。
+ * @return array 包含 'dates' (日期标签) 和 'data' (每日算单量) 的数组。
+ */
 function generateDailyCalculationVolumeData(DateTime $currentDate) {
     $dates = [];
     $data = [];
@@ -90,7 +120,12 @@ function generateDailyCalculationVolumeData(DateTime $currentDate) {
     return ['dates' => $dates, 'data' => $data];
 }
 
-// --- 生成近30天每日续保算单量数据函数 ---
+/**
+ * 生成近30天每日续保算单量数据。
+ *
+ * @param DateTime $currentDate 当前日期对象。
+ * @return array 包含 'dates' (日期标签) 和 'data' (每日续保算单量) 的数组。
+ */
 function generateDailyRenewalCalculationVolumeData(DateTime $currentDate) {
     $dates = [];
     $data = [];
@@ -106,51 +141,114 @@ function generateDailyRenewalCalculationVolumeData(DateTime $currentDate) {
     return ['dates' => $dates, 'data' => $data];
 }
 
-// --- 生成交强险与商业险近30天数据函数 ---
+/**
+ * 生成交强险与商业险近30天的数据。
+ *
+ * @param DateTime $currentDate 当前日期对象。
+ * @return array 包含 'dates' (日期标签), 'jiaopai' (交强险数据), 'shangye' (商业险数据) 的数组。
+ */
 function generateDailyInsuranceTrendData(DateTime $currentDate) {
     $dates = [];
     $jiaopaiData = [];
     $shangyeData = [];
 
-    $tempDate = clone $currentDate; // Copy current date
+    $tempDate = clone $currentDate; // 复制当前日期
 
-    // Go back 30 days
+    // 回溯 30 天
     for ($i = 0; $i < 30; $i++) {
-        array_unshift($dates, $tempDate->format('Y-m-d')); // Add to the beginning for chronological order
+        // 将日期标签添加到数组的开头
+        array_unshift($dates, $tempDate->format('Y-m-d'));
 
-        // Simulate data for jiaopai
+        // 模拟交强险数据
         array_unshift($jiaopaiData, rand(80, 200));
 
-        // Simulate data for shangye
+        // 模拟商业险数据
         array_unshift($shangyeData, rand(150, 300));
 
-        // Move to the previous day
+        // 移动到前一天
         $tempDate->modify('-1 day');
     }
     return ['dates' => $dates, 'jiaopai' => $jiaopaiData, 'shangye' => $shangyeData];
 }
 
-// 主数据获取函数，从这里调用上述生成函数或数据库查询
+/**
+ * 获取仪表盘所需的所有数据。
+ * 在此函数中可以集成数据库查询。
+ *
+ * @return array 包含所有模拟或从数据库获取的仪表盘数据的数组。
+ */
 function getDashboardData() {
-    global $pdo; // 使用全局 PDO 对象
+    global $pdo; // 声明使用全局的 PDO 数据库连接对象
 
-    $currentDate = new DateTime();
+    $currentDate = new DateTime(); // 获取当前日期
 
-    // 模拟数据 (部分数据可替换为从数据库获取)
+    // --- 计算总任务量 ---
+    // 总任务量：yuanshuju表中保险止期为当前日期及后60天内的车架号/VIN码数量
+    // 排除已续保的车架号/VIN码，已续保判定依据：
+    // xubao表中的车架号/VIN码和发动机号同时匹配yuanshuju表中的车架号/VIN码和发动机号，
+    // 匹配成功且xubao表中的支付日期是在yuanshuju表中保险止期的前60天内（含当天）属于已续保。
+    // 支付日期大于保险止期视为新保，不属于已续保。
+    $totalTaskVolume = 0;
+    try {
+        $stmt = $pdo->query("
+            SELECT COUNT(DISTINCT y.VIN码) AS total_task_count
+            FROM yuanshuju AS y
+            WHERE y.保险止期 BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 60 DAY)
+              AND NOT EXISTS (
+                  SELECT 1
+                  FROM xubao AS x
+                  WHERE x.VIN码 = y.VIN码
+                    AND x.发动机号 = y.发动机号
+                    AND x.支付日期 BETWEEN DATE_SUB(y.保险止期, INTERVAL 60 DAY) AND y.保险止期
+              )
+        ");
+        $totalTaskVolume = $stmt->fetchColumn();
+    } catch (PDOException $e) {
+        error_log("查询总任务量失败: " . $e->getMessage());
+        // 可以选择返回默认值或抛出异常
+        $totalTaskVolume = 0; // 查询失败时返回0
+    }
+
+    // --- 计算月任务量 ---
+    // 月任务量：同总任务量逻辑，但增加时间条件：保险止期在当前月份
+    $monthlyTaskVolume = 0;
+    try {
+        $stmt = $pdo->query("
+            SELECT COUNT(DISTINCT y.VIN码) AS monthly_task_count
+            FROM yuanshuju AS y
+            WHERE y.保险止期 BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 60 DAY)
+              AND MONTH(y.保险止期) = MONTH(CURDATE())
+              AND YEAR(y.保险止期) = YEAR(CURDATE())
+              AND NOT EXISTS (
+                  SELECT 1
+                  FROM xubao AS x
+                  WHERE x.VIN码 = y.VIN码
+                    AND x.发动机号 = y.发动机号
+                    AND x.支付日期 BETWEEN DATE_SUB(y.保险止期, INTERVAL 60 DAY) AND y.保险止期
+              )
+        ");
+        $monthlyTaskVolume = $stmt->fetchColumn();
+    } catch (PDOException $e) {
+        error_log("查询月任务量失败: " . $e->getMessage());
+        $monthlyTaskVolume = 0; // 查询失败时返回0
+    }
+
+
+    // 模拟数据 (在实际应用中，这些数据将从数据库查询、外部API获取等)
     $data = [
         // 数字看板数据
-        'totalTaskVolume' => 4,
-        'monthlyTaskVolume' => 6,
-        'monthlyRenewalVolume' => 3,
-        'dailyRenewalVolume' => 50,
-        'dayOnDayRatio' => '+2.5%',
-        'quarterlyRenewalRate' => '85%',
-        'monthlyRenewalRate' => '50.00%',
-        'weeklyRenewalRate' => '90%',
+        'totalTaskVolume' => $totalTaskVolume, // 从数据库获取
+        'monthlyTaskVolume' => $monthlyTaskVolume, // 从数据库获取
+        'monthlyRenewalVolume' => 3, // 示例值，可替换为数据库查询
+        'dailyRenewalVolume' => 50, // 示例值，可替换为数据库查询
+        'dayOnDayRatio' => '+2.5%', // 示例值，可替换为数据库查询
+        'quarterlyRenewalRate' => '85%', // 示例值，可替换为数据库查询
+        'monthlyRenewalRate' => '50.00%', // 示例值，可替换为数据库查询
+        'weeklyRenewalRate' => '90%', // 示例值，可替换为数据库查询
 
         // 新增的算单量数据
-        'monthlyCalculationVolume' => 1850, // 示例值：本月算单量
-        'renewalCalculationVolume' => 920,  // 示例值：续保算单量
+        'monthlyCalculationVolume' => 1850, // 示例值：本月算单量，可替换为数据库查询
+        'renewalCalculationVolume' => 920,  // 示例值：续保算单量，可替换为数据库查询
 
         // 录单员当月续保量饼图数据
         'recorderRenewal' => [
@@ -334,20 +432,6 @@ function getDashboardData() {
     $data['yearOnYearComparison'] = generateYearOnYearDailyComparisonData($currentDate);
     $data['dailyCalculationVolume'] = generateDailyCalculationVolumeData($currentDate);
     $data['dailyRenewalCalculationVolume'] = generateDailyRenewalCalculationVolumeData($currentDate);
-
-    // 在这里可以添加从数据库查询数据的逻辑，并合并到 $data 数组中
-    // 示例：从数据库获取录单员列表 (如果 'recorders' 表存在)
-    /*
-    try {
-        $stmt = $pdo->query("SELECT id, name FROM recorders");
-        $recordersFromDb = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        // 可以根据需要将数据库数据格式化并添加到 $data 数组中
-        // $data['recordersList'] = $recordersFromDb;
-    } catch (PDOException $e) {
-        error_log("Error fetching recorders: " . $e->getMessage());
-        // 处理错误，例如返回空数组或特定错误信息
-    }
-    */
 
     return $data;
 }

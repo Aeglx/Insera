@@ -4,44 +4,48 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>数据看板</title>
+    <!-- 引入 ECharts 库用于图表绘制 -->
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+    <!-- 引入 Font Awesome 图标库 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
+        /* 页面基础样式 */
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 0;
             padding: 20px;
-            /* background-color 将由 JavaScript 随机设置 */
-            color: #ecf0f1;
+            color: #ecf0f1; /* 字体颜色 */
             background-size: cover;
             background-attachment: fixed;
             display: flex;
             flex-direction: column;
             align-items: center;
-            transition: background-color 1s ease-in-out;
+            transition: background-color 1s ease-in-out; /* 背景色过渡效果 */
         }
 
         /* 通用的磨砂玻璃效果和鼠标悬停特效 */
         .glass-card, .glass-chart-container, .glass-table-container {
-            background-color: rgba(255, 255, 255, 0.15);
-            border-radius: 12px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-            backdrop-filter: blur(15px);
-            -webkit-backdrop-filter: blur(15px);
-            transition: all 0.3s ease-in-out;
+            background-color: rgba(255, 255, 255, 0.15); /* 背景色带透明度 */
+            border-radius: 12px; /* 圆角 */
+            border: 1px solid rgba(255, 255, 255, 0.2); /* 边框 */
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); /* 阴影 */
+            backdrop-filter: blur(15px); /* 磨砂玻璃效果 */
+            -webkit-backdrop-filter: blur(15px); /* Safari 兼容 */
+            transition: all 0.3s ease-in-out; /* 所有属性的过渡效果 */
             position: relative;
             overflow: hidden;
             padding: 20px;
         }
 
+        /* 鼠标悬停时的效果 */
         .glass-card:hover, .glass-chart-container:hover, .glass-table-container:hover {
             background-color: rgba(255, 255, 255, 0.25);
             box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
-            transform: translateY(-8px);
+            transform: translateY(-8px); /* 向上移动 */
             border-color: rgba(255, 255, 255, 0.4);
         }
 
+        /* 页面头部样式 */
         .header {
             width: calc(100% - 40px);
             max-width: 1400px;
@@ -98,6 +102,7 @@
             margin: 20px 0 40px 0;
         }
 
+        /* 仪表盘网格布局 */
         .dashboard-grid {
             display: grid;
             gap: 25px;
@@ -110,7 +115,7 @@
             gap: 25px;
         }
 
-        /* 单个数字卡片的样式，应用磨砂玻璃效果 */
+        /* 单个数字卡片样式 */
         .card {
             padding: 25px 20px;
             height: auto;
@@ -119,14 +124,14 @@
             flex-direction: column;
             justify-content: space-between;
             align-items: center;
-            cursor: pointer;
+            cursor: pointer; /* 可点击指示 */
         }
 
         .card .value {
             font-size: 38px;
             font-weight: 700;
-            color: #8be9fd;
-            text-shadow: 0 0 10px rgba(139, 233, 253, 0.5);
+            color: #8be9fd; /* 主色调 */
+            text-shadow: 0 0 10px rgba(139, 233, 253, 0.5); /* 文字阴影 */
             margin-bottom: 8px;
         }
         .card .label {
@@ -140,31 +145,28 @@
             margin-bottom: 10px;
         }
 
-        /* Chart Row Layouts */
+        /* 图表行布局 */
         .chart-row {
             display: grid;
             gap: 25px;
             margin-top: 25px;
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: repeat(3, 1fr); /* 默认三列 */
         }
 
-        .chart-row.top-charts {
-            grid-template-columns: 2fr 1fr;
-        }
-
+        .chart-row.top-charts,
         .chart-row.middle-charts {
-            grid-template-columns: 2fr 1fr;
+            grid-template-columns: 2fr 1fr; /* 两列布局，左侧宽，右侧窄 */
         }
 
         .chart-row.bottom-chart {
-            grid-template-columns: 2fr 1fr;
+            grid-template-columns: 2fr 1fr; /* 两列布局 */
         }
 
         .glass-chart-container.main-chart {
-            min-height: 400px;
+            min-height: 400px; /* 主图表的最小高度 */
         }
 
-        /* Chart Container Styles */
+        /* 图表容器样式 */
         .chart-container {
             min-height: 350px;
             display: flex;
@@ -181,21 +183,21 @@
             font-size: 22px;
             font-weight: 500;
         }
-        .chart-container > div[id$="-chart"] {
+        .chart-container > div[id$="-chart"] { /* 匹配所有以 "-chart" 结尾的 id */
             width: 100%;
             height: 100%;
-            flex-grow: 1;
+            flex-grow: 1; /* 填充可用空间 */
         }
 
-        /* Table Container Styles */
+        /* 表格容器样式 */
         .table-container {
-            overflow-x: auto;
+            overflow-x: auto; /* 横向滚动 */
             margin-top: 25px;
             padding: 25px;
         }
         table {
             width: 100%;
-            border-collapse: collapse;
+            border-collapse: collapse; /* 合并边框 */
             margin-top: 15px;
             color: #f8f8f2;
             font-size: 15px;
@@ -204,45 +206,45 @@
             border: 1px solid rgba(255, 255, 255, 0.2);
             padding: 12px 15px;
             text-align: left;
-            white-space: nowrap;
+            white-space: nowrap; /* 不换行 */
         }
         th {
             background-color: rgba(255, 255, 255, 0.1);
             font-weight: 600;
             color: #a8dadc;
         }
-        tbody tr:nth-child(even) {
+        tbody tr:nth-child(even) { /* 隔行换色 */
             background-color: rgba(255, 255, 255, 0.05);
         }
         tbody tr:hover {
             background-color: rgba(255, 255, 255, 0.15);
-            transform: scale(1.01);
+            transform: scale(1.01); /* 鼠标悬停时略微放大 */
             transition: background-color 0.2s ease, transform 0.2s ease;
         }
 
-        /* Chart Title Icon */
+        /* 图表标题图标 */
         .chart-title-icon {
             margin-right: 10px;
             color: #a8dadc;
         }
 
-        /* Modal Styles */
+        /* 模态框（弹窗）样式 */
         .modal {
-            display: none;
-            position: fixed;
-            z-index: 1000;
+            display: none; /* 默认隐藏 */
+            position: fixed; /* 固定定位 */
+            z-index: 1000; /* 置于顶层 */
             left: 0;
             top: 0;
             width: 100%;
             height: 100%;
-            overflow: auto;
-            background-color: rgba(0, 0, 0, 0.7);
-            justify-content: center;
-            align-items: center;
+            overflow: auto; /* 内容溢出时滚动 */
+            background-color: rgba(0, 0, 0, 0.7); /* 半透明黑色背景 */
+            justify-content: center; /* 水平居中 */
+            align-items: center; /* 垂直居中 */
         }
 
         .modal-content {
-            background-color: rgba(44, 62, 80, 0.9);
+            background-color: rgba(44, 62, 80, 0.9); /* 模态框背景色 */
             margin: auto;
             padding: 30px;
             border: 1px solid rgba(255, 255, 255, 0.3);
@@ -250,7 +252,7 @@
             width: 80%;
             max-width: 900px;
             box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
-            animation: fadeIn 0.3s ease-out;
+            animation: fadeIn 0.3s ease-out; /* 渐入动画 */
             position: relative;
             display: flex;
             flex-direction: column;
@@ -266,10 +268,11 @@
 
         .modal-body {
             width: 100%;
-            height: 400px; /* 适用于图表，表格可能会根据内容自动调整高度 */
+            height: 400px; /* 图表弹窗高度 */
             overflow-y: auto; /* 确保表格内容可滚动 */
         }
 
+        /* 关闭按钮样式 */
         .close-button {
             color: #aaa;
             position: absolute;
@@ -285,9 +288,10 @@
         .close-button:focus {
             color: #fff;
             text-decoration: none;
-            transform: rotate(90deg);
+            transform: rotate(90deg); /* 鼠标悬停时旋转 */
         }
 
+        /* 渐入动画 */
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(-20px); }
             to { opacity: 1; transform: translateY(0); }
@@ -310,7 +314,7 @@
             padding: 20px;
         }
 
-        /* Ensure tables in modals look good */
+        /* 模态框内表格样式 */
         #detail-modal-table {
             width: 100%;
             border-collapse: collapse;
@@ -332,26 +336,26 @@
         #detail-modal-table tbody tr:nth-child(even) {
             background-color: rgba(255, 255, 255, 0.05);
         }
-        #detail-modal-table tbody tr:hover {
+        tbody tr:hover {
             background-color: rgba(255, 255, 255, 0.15);
         }
 
-        /* Checkbox styling */
+        /* 复选框样式 */
         .checkbox-container {
             display: flex;
             align-items: center;
-            justify-content: center; /* Center the checkbox */
-            height: 100%; /* Ensure it takes full cell height */
+            justify-content: center; /* 居中复选框 */
+            height: 100%; /* 确保占据单元格的完整高度 */
         }
         .checkbox-container input[type="checkbox"] {
-            transform: scale(1.2); /* Slightly larger checkbox */
+            transform: scale(1.2); /* 略微放大复选框 */
             cursor: pointer;
-            accent-color: #55efc4; /* Highlight color for checkbox */
+            accent-color: #55efc4; /* 复选框选中时的颜色 */
         }
 
-        /* Copy Button Style */
+        /* 复制按钮样式 */
         .copy-button {
-            background-color: #007bff; /* Primary blue color */
+            background-color: #007bff; /* 主蓝色 */
             color: white;
             border: none;
             border-radius: 5px;
@@ -359,58 +363,55 @@
             font-size: 14px;
             cursor: pointer;
             transition: background-color 0.3s ease;
-            margin-left: 20px; /* Space from title or other elements */
+            margin-left: 20px;
             display: flex;
             align-items: center;
-            gap: 5px; /* Space between icon and text */
+            gap: 5px; /* 图标和文字之间的间距 */
         }
 
         .copy-button:hover {
             background-color: #0056b3;
         }
 
-        /* Styles for the modal title container to allow button beside title */
+        /* 模态框标题容器样式，允许按钮与标题并排 */
         .modal-title-container {
             display: flex;
             align-items: center;
-            justify-content: center; /* Center title and button */
+            justify-content: center; /* 标题和按钮居中 */
             width: 100%;
             margin-bottom: 25px;
         }
         .modal-title-container h3 {
-            margin: 0; /* Remove default margin to align with button */
+            margin: 0; /* 移除默认外边距，以与按钮对齐 */
         }
 
-        /* Sortable Header Styles */
+        /* 可排序表头样式 */
         .sortable-header {
             cursor: pointer;
             position: relative;
-            padding-right: 20px; /* Space for sort icon */
+            padding-right: 20px; /* 为排序图标留出空间 */
         }
 
         .sortable-header .sort-icon {
             position: absolute;
-            right: 0px; /* Adjust as needed */
+            right: 0px;
             top: 50%;
             transform: translateY(-50%);
             font-size: 0.8em;
-            color: rgba(255, 255, 255, 0.5); /* Faded by default */
+            color: rgba(255, 255, 255, 0.5); /* 默认淡色 */
         }
 
-        .sortable-header.asc .sort-icon {
-            color: #8be9fd; /* Brighter when active */
-        }
-
+        /* 排序图标激活状态 */
+        .sortable-header.asc .sort-icon,
         .sortable-header.desc .sort-icon {
-            color: #8be9fd; /* Brighter when active */
+            color: #8be9fd; /* 激活时颜色更亮 */
         }
 
-
-        /* Responsive Adjustments */
+        /* 响应式调整 */
         @media (max-width: 992px) {
             .chart-row.top-charts,
             .chart-row.middle-charts {
-                grid-template-columns: 1fr;
+                grid-template-columns: 1fr; /* 在中等屏幕下变为单列 */
             }
             .glass-chart-container.main-chart {
                 min-height: 350px;
@@ -659,6 +660,7 @@
         </div>
     </div>
 
+    <!-- 图表模态框 -->
     <div id="chartModal" class="modal">
         <div class="modal-content">
             <span class="close-button">&times;</span>
@@ -667,10 +669,12 @@
         </div>
     </div>
 
+    <!-- 详情表格模态框 -->
     <div id="detailModal" class="modal">
         <div class="modal-content">
             <span class="close-button detail-close-button">&times;</span>
-            <div class="modal-title-container"> <h3 id="detail-modal-title"></h3>
+            <div class="modal-title-container"> 
+                <h3 id="detail-modal-title"></h3>
                 <button id="copyTableButton" class="copy-button" style="display: none;">
                     <i class="fas fa-copy"></i> 复制
                 </button>
@@ -687,6 +691,9 @@
     </div>
 
     <script>
+        // 添加一个全局的控制台日志，用于调试脚本是否开始执行
+        console.log('Script started');
+
         let dashboardData = {}; // 声明一个全局变量来存储从API获取的数据
 
         // --- 背景颜色随机化函数 ---
@@ -696,6 +703,7 @@
             ];
             const randomIndex = Math.floor(Math.random() * darkColors.length);
             document.body.style.backgroundColor = darkColors[randomIndex];
+            console.log('Background color set.'); // 调试信息
         }
 
         // --- 时间更新函数 ---
@@ -717,11 +725,18 @@
             document.getElementById('data-collection-date').textContent = `采集时间：${yYear}年${yMonth}月${yDay}日 (实时数据)`;
         }
 
-        setInterval(updateDateTime, 1000);
-        updateDateTime();
+        setInterval(updateDateTime, 1000); // 每秒更新时间
+        updateDateTime(); // 页面加载时立即更新时间
 
         // --- 更新数字看板数据 ---
         function updateNumberCards() {
+            // 在这里添加一个检查，确保 dashboardData 已经加载
+            if (!dashboardData || Object.keys(dashboardData).length === 0) {
+                console.warn("Dashboard data is not loaded yet. Skipping number card update.");
+                // 可以显示加载状态或默认值
+                return;
+            }
+
             document.getElementById('total-task-volume').textContent = dashboardData.totalTaskVolume.toLocaleString();
             document.getElementById('monthly-task-volume').textContent = dashboardData.monthlyTaskVolume.toLocaleString();
             document.getElementById('monthly-renewal-volume').textContent = dashboardData.monthlyRenewalVolume.toLocaleString();
@@ -738,25 +753,32 @@
 
         // --- 渲染 ECharts 图表 ---
         function renderECharts() {
-            const chartTextColor = '#ecf0f1';
-            const chartLineColor = 'rgba(255, 255, 255, 0.3)';
-            const chartAreaColor = 'rgba(139, 233, 253, 0.1)';
+            // 在这里添加一个检查，确保 dashboardData 已经加载
+            if (!dashboardData || Object.keys(dashboardData).length === 0) {
+                console.warn("Dashboard data is not loaded yet. Skipping chart rendering.");
+                return;
+            }
 
+            const chartTextColor = '#ecf0f1'; // 图表文字颜色
+            const chartLineColor = 'rgba(255, 255, 255, 0.3)'; // 图表线条颜色
+            const chartAreaColor = 'rgba(139, 233, 253, 0.1)'; // 图表区域填充色
+
+            // 交强险与商业险数量趋势图
             const insuranceTrendChart = echarts.init(document.getElementById('insurance-trend-chart'));
             const insuranceTrendOption = {
-                color: ['#8be9fd', '#bd93f9'],
-                tooltip: { trigger: 'axis' },
+                color: ['#8be9fd', '#bd93f9'], // 系列颜色
+                tooltip: { trigger: 'axis' }, // 提示框
                 legend: {
                     data: ['交强险', '商业险'],
                     textStyle: { color: chartTextColor }
                 },
                 xAxis: {
                     type: 'category',
-                    data: dashboardData.insuranceTrend.dates,
+                    data: dashboardData.insuranceTrend.dates, // X轴数据
                     axisLabel: {
                         color: chartTextColor,
-                        rotate: 45,
-                        interval: 0
+                        rotate: 45, // 标签旋转
+                        interval: 0 // 所有标签都显示
                     },
                     axisLine: { lineStyle: { color: chartLineColor } }
                 },
@@ -773,6 +795,7 @@
             };
             insuranceTrendChart.setOption(insuranceTrendOption);
 
+            // 录单员当月续保量饼图
             const recorderRenewalPieChart = echarts.init(document.getElementById('recorder-renewal-pie-chart'));
             const recorderRenewalPieOption = {
                 color: ['#ff6b6b', '#feca57', '#48dbfb', '#1dd1a1', '#ff9ff3'],
@@ -786,14 +809,12 @@
                     {
                         name: '续保量',
                         type: 'pie',
-                        radius: '70%',
+                        radius: ['40%', '70%'], // 修改为环形图
                         center: ['50%', '50%'],
                         avoidLabelOverlap: false,
                         label: {
-                            show: true,
-                            position: 'outer',
-                            formatter: '{b} ({d}%)',
-                            color: chartTextColor
+                            show: false, // 默认不显示标签
+                            position: 'center'
                         },
                         emphasis: {
                             label: {
@@ -803,13 +824,14 @@
                                 color: '#fff'
                             }
                         },
-                        labelLine: { show: true },
+                        labelLine: { show: false }, // 不显示标签线
                         data: dashboardData.recorderRenewal
                     }
                 ]
             };
             recorderRenewalPieChart.setOption(recorderRenewalPieOption);
 
+            // 饼图点击事件，显示录单员详单
             recorderRenewalPieChart.on('click', function (params) {
                 if (params.componentType === 'series' && params.seriesType === 'pie') {
                     const recorderName = params.name;
@@ -828,12 +850,14 @@
                             detailData
                         );
                     } else {
-                        alert(`没有找到 ${recorderName} 的详细续保数据。`);
+                        // 使用模拟弹窗代替 alert
+                        showCustomAlert(`没有找到 ${recorderName} 的详细续保数据。`);
                     }
                 }
             });
 
 
+            // 续保到期数量柱状图
             const renewalDueBarChart = echarts.init(document.getElementById('renewal-due-bar-chart'));
             const renewalDueOption = {
                 tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
@@ -879,6 +903,7 @@
             };
             renewalDueBarChart.setOption(renewalDueOption);
 
+            // 当前日期与上年同期数据对比图
             const yearOnYearComparisonChart = echarts.init(document.getElementById('year-on-year-comparison-chart'));
             const yearOnYearOption = {
                 color: ['#ffeaa7', '#a29bfe'],
@@ -910,6 +935,7 @@
             };
             yearOnYearComparisonChart.setOption(yearOnYearOption);
 
+            // 续保周期天数环形图
             const renewalCycleDonutChart = echarts.init(document.getElementById('renewal-cycle-donut-chart'));
             const renewalCycleOption = {
                 color: ['#ff7675', '#fdcb6e', '#55efc4', '#74b9ff', '#a29bfe', '#e17055'],
@@ -944,13 +970,14 @@
             };
             renewalCycleDonutChart.setOption(renewalCycleOption);
 
+            // 窗口大小改变时重绘图表
             window.addEventListener('resize', () => {
                 insuranceTrendChart.resize();
                 recorderRenewalPieChart.resize();
                 renewalDueBarChart.resize();
                 yearOnYearComparisonChart.resize();
                 renewalCycleDonutChart.resize();
-                if (modalChartInstance) {
+                if (modalChartInstance) { // 如果模态框图表实例存在，也需要重绘
                     modalChartInstance.resize();
                 }
             });
@@ -961,12 +988,12 @@
         const closeButton = document.querySelector('.close-button:not(.detail-close-button)');
         const modalTitle = document.getElementById('modal-title');
         const modalChartDiv = document.getElementById('modal-chart');
-        let modalChartInstance = null;
+        let modalChartInstance = null; // 用于存储模态框中的 ECharts 实例
 
         closeButton.onclick = function() {
             chartModal.style.display = 'none';
             if (modalChartInstance) {
-                modalChartInstance.dispose();
+                modalChartInstance.dispose(); // 销毁图表实例以释放资源
                 modalChartInstance = null;
             }
         }
@@ -983,6 +1010,7 @@
             copyTableButton.style.display = 'none'; // 关闭弹窗时隐藏复制按钮
         }
 
+        // 点击模态框外部关闭模态框
         window.onclick = function(event) {
             if (event.target == chartModal) {
                 chartModal.style.display = 'none';
@@ -997,14 +1025,22 @@
             }
         }
 
+        /**
+         * 显示通用图表模态框。
+         * @param {string} title 模态框标题。
+         * @param {'bar'|'line'} chartType 图表类型 ('bar' 或 'line')。
+         * @param {Array<number>} data 图表数据。
+         * @param {Array<string>} xData X轴标签数据。
+         * @param {string} yAxisLabel Y轴名称。
+         */
         function showChartModal(title, chartType, data, xData, yAxisLabel) {
             modalTitle.textContent = title;
-            chartModal.style.display = 'flex';
+            chartModal.style.display = 'flex'; // 显示模态框
 
             if (modalChartInstance) {
-                modalChartInstance.dispose();
+                modalChartInstance.dispose(); // 销毁之前的实例
             }
-            modalChartInstance = echarts.init(modalChartDiv);
+            modalChartInstance = echarts.init(modalChartDiv); // 初始化新的图表实例
 
             const chartTextColor = '#ecf0f1';
             const chartLineColor = 'rgba(255, 255, 255, 0.4)';
@@ -1103,16 +1139,16 @@
                 };
             }
             modalChartInstance.setOption(option);
-            modalChartInstance.resize();
+            modalChartInstance.resize(); // 确保图表在模态框中正确渲染
         }
 
         // 函数：复制表格数据到剪贴板
         async function copyTableToClipboard(tableElement, columnsConfig) {
             let copiedText = '';
             const rows = tableElement.querySelectorAll('thead tr, tbody tr');
-            const columnWidths = {}; // To store max width for each column
+            const columnWidths = {}; // 用于存储每列的最大宽度
 
-            // First pass: Calculate max width for each column and collect data
+            // 第一遍遍历：计算每列的最大宽度并收集数据
             const allRowData = [];
             rows.forEach(row => {
                 const cells = row.querySelectorAll('th, td');
@@ -1123,13 +1159,13 @@
                     const columnLabel = columnsConfig[colIndex] ? columnsConfig[colIndex].label : null;
 
 
-                    // Apply truncation for '投保人名称' if it's the specific column
+                    // 如果是 '投保人名称' 列，并且内容过长，则截断
                     if ((columnField === 'applicantName' || columnLabel === '投保人名称') && textContent.length > 5) {
                         textContent = textContent.substring(0, 5) + '...';
                     }
-                    // For checkbox column in expired table, just use a placeholder
+                    // 对于过期表格中的复选框列，只使用占位符
                     if (cell.querySelector('input[type="checkbox"]')) {
-                        textContent = ''; // Don't copy checkbox text content
+                        textContent = ''; // 不复制复选框的文本内容
                     }
 
                     rowValues.push(textContent);
@@ -1138,21 +1174,78 @@
                 allRowData.push(rowValues);
             });
 
-            // Second pass: Format text with padding
+            // 第二遍遍历：用空格填充文本以对齐列
             allRowData.forEach(rowValues => {
                 rowValues.forEach((text, colIndex) => {
-                    copiedText += text.padEnd(columnWidths[colIndex] + 2); // Add 2 for spacing
+                    copiedText += text.padEnd(columnWidths[colIndex] + 2); // 额外添加2个空格作为间距
                 });
-                copiedText += '\n'; // New line for each row
+                copiedText += '\n'; // 每行结束后换行
             });
 
             try {
-                await navigator.clipboard.writeText(copiedText);
-                alert('表格数据已复制到剪贴板！');
+                // 使用 document.execCommand('copy') 因为 navigator.clipboard.writeText() 在 iframe 中可能受限
+                const textarea = document.createElement('textarea');
+                textarea.value = copiedText;
+                textarea.style.position = 'fixed'; // 避免滚动
+                textarea.style.left = '-9999px'; // 移出屏幕
+                document.body.appendChild(textarea);
+                textarea.select();
+                const successful = document.execCommand('copy');
+                document.body.removeChild(textarea);
+
+                if (successful) {
+                    showCustomAlert('表格数据已复制到剪贴板！');
+                } else {
+                    showCustomAlert('复制失败，请手动复制。');
+                }
             } catch (err) {
                 console.error('复制失败:', err);
-                alert('复制失败，请手动复制。');
+                showCustomAlert('复制失败，请手动复制。');
             }
+        }
+
+        // 自定义弹窗函数 (替代 alert)
+        function showCustomAlert(message) {
+            const alertModal = document.createElement('div');
+            alertModal.style.cssText = `
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background-color: rgba(44, 62, 80, 0.95);
+                padding: 30px;
+                border-radius: 15px;
+                box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+                color: #fff;
+                font-size: 18px;
+                text-align: center;
+                z-index: 1001;
+                border: 1px solid rgba(255, 255, 255, 0.3);
+                backdrop-filter: blur(5px);
+                -webkit-backdrop-filter: blur(5px);
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+            `;
+            alertModal.innerHTML = `
+                <p>${message}</p>
+                <button style="
+                    background-color: #007bff;
+                    color: white;
+                    border: none;
+                    border-radius: 8px;
+                    padding: 10px 25px;
+                    font-size: 16px;
+                    cursor: pointer;
+                    margin-top: 20px;
+                    transition: background-color 0.3s ease;
+                " onmouseover="this.style.backgroundColor='#0056b3'" onmouseout="this.style.backgroundColor='#007bff'">确定</button>
+            `;
+            document.body.appendChild(alertModal);
+
+            alertModal.querySelector('button').onclick = () => {
+                document.body.removeChild(alertModal);
+            };
         }
 
 
@@ -1167,50 +1260,50 @@
             tableHeaderRow.innerHTML = '';
             tableBody.innerHTML = '';
 
-            // 检查是否是可续保、已续保等需要复制功能的弹窗 (非脱保，且不包含标注选项列)
-            // 修改条件：只要不是脱保表格，就显示复制按钮
-            if (!isExpiredTable) {
-                copyTableButton.style.display = 'inline-flex'; // Show copy button
-                // Remove any existing click listeners before adding a new one
-                copyTableButton.onclick = null; // Clear previous listener
-                copyTableButton.onclick = () => copyTableToClipboard(detailModalTable, columns);
+            // 检查是否需要显示复制按钮
+            if (!isExpiredTable) { // 只要不是脱保表格，就显示复制按钮
+                copyTableButton.style.display = 'inline-flex';
+                copyTableButton.onclick = null; // 清除旧的事件监听器
+                copyTableButton.onclick = () => copyTableToClipboard(detailModalTable, columns); // 绑定新的事件监听器
             } else {
-                copyTableButton.style.display = 'none'; // Hide copy button for expired table
+                copyTableButton.style.display = 'none'; // 脱保表格隐藏复制按钮
             }
 
 
             columns.forEach(col => {
                 const th = document.createElement('th');
                 if (isExpiredTable && col.field === 'markOption') {
+                    // 对于“标注选项”列，添加全选复选框
                     const labelDiv = document.createElement('div');
                     labelDiv.textContent = col.label; // "标注选项"
                     th.appendChild(labelDiv);
 
                     const selectAllCheckbox = document.createElement('input');
                     selectAllCheckbox.type = 'checkbox';
-                    selectAllCheckbox.id = 'selectAllExpired';
+                    selectAllCheckbox.id = 'selectAllExpired'; // 给全选复选框一个ID
                     selectAllCheckbox.style.marginLeft = '10px';
                     
                     const labelForSelectAll = document.createElement('label');
                     labelForSelectAll.setAttribute('for', 'selectAllExpired');
                     labelForSelectAll.textContent = '全选';
                     labelForSelectAll.style.cursor = 'pointer';
-                    labelForSelectAll.style.color = '#a8dadc'; // Match header text color
+                    labelForSelectAll.style.color = '#a8dadc'; // 匹配表头文字颜色
 
                     const headerCheckboxContainer = document.createElement('div');
                     headerCheckboxContainer.style.display = 'flex';
                     headerCheckboxContainer.style.alignItems = 'center';
-                    headerCheckboxContainer.style.justifyContent = 'center'; // Center the whole header content
+                    headerCheckboxContainer.style.justifyContent = 'center'; // 居中整个表头内容
                     headerCheckboxContainer.appendChild(selectAllCheckbox);
                     headerCheckboxContainer.appendChild(labelForSelectAll);
 
                     th.appendChild(headerCheckboxContainer);
 
+                    // 为全选复选框添加事件监听器
                     selectAllCheckbox.addEventListener('change', function() {
-                        const checkboxes = tableBody.querySelectorAll('input[type="checkbox"][data-license-plate]');
+                        const checkboxes = tableBody.querySelectorAll('input[type="checkbox'][data-license-plate]');
                         checkboxes.forEach(checkbox => {
-                            checkbox.checked = this.checked;
-                            // Trigger change event on individual checkboxes to update UI
+                            checkbox.checked = this.checked; // 设置所有复选框与全选框状态一致
+                            // 触发每个复选框的change事件，以更新它们的样式
                             const event = new Event('change');
                             checkbox.dispatchEvent(event);
                         });
@@ -1222,41 +1315,43 @@
                 tableHeaderRow.appendChild(th);
             });
 
+            // 填充表格数据
             data.forEach(rowData => {
                 const tr = tableBody.insertRow();
                 columns.forEach((col, colIndex) => {
                     const td = tr.insertCell();
                     if (isExpiredTable && col.field === 'markOption') {
+                        // 对于“标注选项”列，添加单个复选框
                         const checkboxContainer = document.createElement('div');
                         checkboxContainer.className = 'checkbox-container';
                         const checkbox = document.createElement('input');
                         checkbox.type = 'checkbox';
-                        checkbox.dataset.licensePlate = rowData.licensePlate; // Store license plate for future use
+                        checkbox.dataset.licensePlate = rowData.licensePlate; // 存储车牌号以便后续使用
                         checkbox.addEventListener('change', function() {
                             if (this.checked) {
-                                // Simulate removal from calculations
-                                tr.style.opacity = '0.5'; // Visually fade out
-                                tr.style.textDecoration = 'line-through'; // Cross out text
-                                // In a real app, send data to backend here to mark as "不再计数"
+                                // 模拟从计算中移除（视觉效果）
+                                tr.style.opacity = '0.5'; // 视觉上淡化
+                                tr.style.textDecoration = 'line-through'; // 文字添加删除线
+                                // 在真实应用中，这里会发送数据到后端，将此车辆标记为“不再计数”
                                 console.log(`车辆 ${this.dataset.licensePlate} 已被标记为“不再计数”。`);
                             } else {
                                 tr.style.opacity = '1';
                                 tr.style.textDecoration = 'none';
-                                // In a real app, send data to backend here to unmark
+                                // 在真实应用中，这里会发送数据到后端，取消标记
                                 console.log(`车辆 ${this.dataset.licensePlate} 已取消标记“不再计数”。`);
                             }
-                            // Update "全选" checkbox state based on individual checkboxes
-                            const allCheckboxes = tableBody.querySelectorAll('input[type="checkbox"][data-license-plate]');
+                            // 根据单个复选框的状态更新“全选”复选框
+                            const allCheckboxes = tableBody.querySelectorAll('input[type="checkbox'][data-license-plate]');
                             const checkedCheckboxes = tableBody.querySelectorAll('input[type="checkbox"][data-license-plate]:checked');
                             const selectAllCheckbox = document.getElementById('selectAllExpired');
                             if (selectAllCheckbox) {
-                                selectAllCheckbox.checked = allCheckboxes.length === checkedCheckboxes.length;
+                                selectAllCheckbox.checked = allCheckboxes.length > 0 && allCheckboxes.length === checkedCheckboxes.length;
                                 selectAllCheckbox.indeterminate = checkedCheckboxes.length > 0 && checkedCheckboxes.length < allCheckboxes.length;
                             }
                         });
                         checkboxContainer.appendChild(checkbox);
                         td.appendChild(checkboxContainer);
-                    } else if (col.field === 'applicantName' || (col.label === '投保人名称' && !isExpiredTable)) { // Apply truncation for '投保人名称' in applicable tables
+                    } else if (col.field === 'applicantName' || (col.label === '投保人名称' && !isExpiredTable)) { // 对“投保人名称”列进行截断处理
                         let displayValue = rowData[col.field] || '';
                         if (displayValue.length > 5) {
                             displayValue = displayValue.substring(0, 5) + '...';
@@ -1269,7 +1364,7 @@
                 });
             });
 
-            // After populating the table, if it's an expired table, set initial indeterminate state for selectAll checkbox
+            // 表格填充完成后，如果这是过期表格，设置全选复选框的初始不确定状态
             if (isExpiredTable) {
                 const selectAllCheckbox = document.getElementById('selectAllExpired');
                 if (selectAllCheckbox) {
@@ -1289,55 +1384,55 @@
 
             const headers = table.querySelectorAll('.sortable-header');
             const tableBody = table.querySelector('tbody');
-            let currentData = [...initialData]; // Work with a copy of initial data
+            let currentData = [...initialData]; // 处理数据的副本
             const localStorageKey = `sortState_${tableId}`;
 
-            // Helper to get actual value for sorting (e.g., convert "100,000" to 100000)
+            // 辅助函数：获取可排序的值（例如将“100,000”转换为数字）
             function getSortableValue(value) {
                 if (typeof value === 'string') {
-                    // Check if it's a number string (can contain commas or percentage)
+                    // 检查是否为数字字符串（可能包含逗号或百分号）
                     const cleanedValue = value.replace(/,/g, '').replace(/%/g, '');
                     if (!isNaN(cleanedValue) && cleanedValue.trim() !== '') {
                         return parseFloat(cleanedValue);
                     }
                 }
-                return value; // For pure strings (like names) or actual numbers, return as is.
+                return value; // 对于纯字符串（如名称）或实际数字，按原样返回
             }
 
-            // Function to render table rows based on currentData
+            // 函数：根据当前数据渲染表格行
             function renderTableRows(dataToRender) {
-                tableBody.innerHTML = '';
-                dataToRender.forEach((rowDataArray, rowIndex) => { // rowDataArray is like ['张三', '100,000', ...]
-                    const row = tableBody.insertCell();
+                tableBody.innerHTML = ''; // 清空现有行
+                dataToRender.forEach((rowDataArray, rowIndex) => { // rowDataArray 类似于 ['张三', '100,000', ...]
+                    const row = tableBody.insertRow(); 
                     rowDataArray.forEach((cellData, colIndex) => {
-                        const cell = row.insertCell();
+                        const cell = row.insertCell(); // 插入新单元格
                         cell.textContent = cellData;
 
-                        // Re-attach clickable class and event listeners for salesperson table cells
+                        // 重新绑定业务员详情表格中可点击单元格的事件监听器
                         if (tableId === 'salesperson-detail-table' && colIndex > 0) {
-                             cell.classList.add('clickable-policy-count');
-                             const salespersonName = rowDataArray[0]; // Assuming salesperson name is always the first column
-                             // Map column index to data type for salesperson details
+                             cell.classList.add('clickable-policy-count'); // 添加可点击样式
+                             const salespersonName = rowDataArray[0]; // 假设业务员名称始终是第一列
+                             // 将列索引映射到数据类型（可续保、已续保、脱保）
                              const dataTypeMap = {1: 'renewable', 2: 'renewed', 3: 'expired'};
                              const dataType = dataTypeMap[colIndex];
                              if (dataType) {
-                                cell.dataset.salesperson = salespersonName;
-                                cell.dataset.type = dataType;
-                                // Important: remove previous listener to prevent duplicates
+                                cell.dataset.salesperson = salespersonName; // 存储业务员姓名
+                                cell.dataset.type = dataType; // 存储数据类型
+                                // 重要：移除之前的监听器以防止重复绑定
                                 cell.removeEventListener('click', handleSalespersonCellClick);
-                                cell.addEventListener('click', handleSalespersonCellClick);
+                                cell.addEventListener('click', handleSalespersonCellClick); // 绑定新的监听器
                              }
                         }
                     });
                 });
             }
 
-            // Event handler for salesperson detail cells (re-used for dynamic cells)
-            // Moved this function outside renderTableRows to ensure it's defined once
+            // 业务员详情单元格点击事件处理函数（在 renderTableRows 外部定义，确保只定义一次）
             const handleSalespersonCellClick = function() {
                 const salespersonName = this.dataset.salesperson;
                 const dataType = this.dataset.type;
 
+                // 从 dashboardData 中获取详细数据
                 const details = dashboardData.salespersonPolicyDetails[salespersonName][dataType];
                 let title = `${salespersonName} - `;
                 let columns = [];
@@ -1366,18 +1461,22 @@
                             { label: '投保人名称', field: 'applicantName' },
                             { label: '车牌号', field: 'licensePlate' },
                             { label: '脱保天数', field: 'daysExpired' },
-                            { label: '标注选项', field: 'markOption' }
+                            { label: '标注选项', field: 'markOption' } // 添加标注选项列
                         ];
-                        isExpired = true;
+                        isExpired = true; // 标记为过期表格
                         break;
+                    default:
+                        title += '未知明细';
+                        columns = [];
                 }
                 showDetailModal(title, columns, details, isExpired);
             };
 
 
+            // 为每个表头添加点击事件监听器
             headers.forEach(header => {
                 let sortIcon = header.querySelector('.sort-icon');
-                if (!sortIcon) { // Ensure icon exists, add if not (e.g., if PHP loop didn't add it)
+                if (!sortIcon) { // 确保图标存在，如果不存在则添加
                     sortIcon = document.createElement('span');
                     sortIcon.className = 'sort-icon fas';
                     header.appendChild(sortIcon);
@@ -1385,30 +1484,32 @@
 
                 header.addEventListener('click', function() {
                     const columnIndex = parseInt(this.dataset.sortColumn);
+                    // 切换排序顺序 (升序 -> 降序 -> 升序)
                     let sortOrder = this.dataset.sortOrder === 'asc' ? 'desc' : 'asc';
 
-                    // Reset other headers
+                    // 重置其他表头的样式和排序状态
                     headers.forEach(h => {
                         h.classList.remove('asc', 'desc');
                         h.querySelector('.sort-icon').className = 'sort-icon fas';
                         h.querySelector('.sort-icon').classList.remove('fa-sort-up', 'fa-sort-down');
                     });
 
-                    // Set current header
+                    // 设置当前点击表头的样式和排序状态
                     this.classList.add(sortOrder);
                     this.querySelector('.sort-icon').classList.add(sortOrder === 'asc' ? 'fa-sort-up' : 'fa-sort-down');
                     this.dataset.sortOrder = sortOrder;
 
-                    // Sort data
+                    // 排序数据
                     currentData.sort((a, b) => {
                         const valA = getSortableValue(a[columnIndex]);
                         const valB = getSortableValue(b[columnIndex]);
 
-                        // For string columns (like '录单员' or '业务员'), use localeCompare for a-z sorting
+                        // 对于字符串列（如“录单员”或“业务员”），使用 localeCompare 进行按字母排序
                         if (typeof valA === 'string' && typeof valB === 'string') {
+                            // 修复点：确保 localeCompare 的第二个参数是正确的比较对象 valA
                             return sortOrder === 'asc' ? valA.localeCompare(valB, 'zh-CN') : valB.localeCompare(valA, 'zh-CN');
                         } else {
-                            // For numeric or other types
+                            // 对于数字或其他类型
                             if (valA < valB) {
                                 return sortOrder === 'asc' ? -1 : 1;
                             }
@@ -1419,41 +1520,45 @@
                         }
                     });
 
-                    renderTableRows(currentData); // Re-render sorted data
+                    renderTableRows(currentData); // 重新渲染排序后的数据
 
-                    // Save sort state to localStorage
+                    // 将排序状态保存到 localStorage
                     localStorage.setItem(localStorageKey, JSON.stringify({ columnIndex, sortOrder }));
                 });
             });
 
-            // Initial render or restore from localStorage
+            // 初始渲染或从 localStorage 恢复排序状态
             const savedSortState = JSON.parse(localStorage.getItem(localStorageKey));
             if (savedSortState) {
                 const { columnIndex, sortOrder } = savedSortState;
                 const headerToClick = table.querySelector(`.sortable-header[data-sort-column="${columnIndex}"]`);
                 if (headerToClick) {
-                    // Temporarily set the data-sort-order to the opposite to ensure the click toggles it correctly
+                    // 临时设置 data-sort-order 为相反的值，以确保点击时能够正确切换
                     headerToClick.dataset.sortOrder = sortOrder === 'asc' ? 'desc' : 'asc';
-                    headerToClick.click(); // Trigger click to apply sort and update UI
+                    headerToClick.click(); // 触发点击事件以应用排序并更新 UI
                 } else {
-                    renderTableRows(currentData); // If saved state invalid, render default
+                    renderTableRows(currentData); // 如果保存的状态无效，则渲染默认数据
                 }
             } else {
-                renderTableRows(currentData); // Render default if no saved state
+                renderTableRows(currentData); // 如果没有保存的状态，则渲染默认数据
             }
         }
 
 
         // --- 从 API 获取数据并初始化页面 ---
         async function fetchDataAndInitialize() {
+            setRandomDarkBackgroundColor(); // 无论数据加载成功与否，都先设置背景色
+
             try {
-                const response = await fetch('api.php'); // 从 api.php 获取数据
+                // 修复点：将相对路径 'api.php' 改为根相对路径 '/api.php'，确保路径解析正确
+                const response = await fetch('/api.php'); 
                 if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                    // 如果 HTTP 状态码不是 2xx，则抛出错误
+                    throw new Error(`HTTP 错误! 状态码: ${response.status}`);
                 }
                 dashboardData = await response.json(); // 将获取到的数据赋值给 dashboardData 变量
 
-                setRandomDarkBackgroundColor();
+                // 数据加载成功后，更新页面元素
                 updateNumberCards();
                 renderECharts();
                 
@@ -1525,7 +1630,9 @@
 
             } catch (error) {
                 console.error('获取数据失败:', error);
-                alert('无法加载数据。请检查网络或联系管理员。');
+                // 即使数据加载失败，也要设置背景色（已提前调用）
+                // 并且显示自定义的错误提示
+                showCustomAlert('无法加载数据。请检查网络或联系管理员。');
             }
         }
 
