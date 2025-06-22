@@ -438,7 +438,7 @@ $mockData['insuranceTrend'] = generateDailyRenewedTrendDataFromDb($pdo, $xubaoTa
 $mockData['quarterlyRenewalData'] = generateRecentQuarterlyDataFromDb($pdo, $xubaoTable, $yuanshujuTable, $currentDateTime);
 $mockData['monthlyRenewalData'] = generateRecentMonthlyDataFromDb($pdo, $xubaoTable, $yuanshujuTable, $currentDateTime);
 $mockData['weeklyRenewalData'] = generateRecentWeeklyDataFromDb($pdo, $xubaoTable, $yuanshujuTable, $currentDateTime);
-$mockData['yearOnYearComparison'] = generateYearOnYearDailyComparisonDataFromDb($pdo, $yuanshujuTable, $currentDateTime);
+$mockData['yearOnYearComparison'] = generateYearOnYearDailyComparisonDataFromDb($pdo, $xubaoTable, $yuanshujuTable, $currentDateTime);
 $mockData['dailyCalculationVolume'] = generateDailyCalculationVolumeDataFromDb($pdo, $yuanshujuTable, $currentDateTime); // 算单量现在返回0
 $mockData['dailyRenewalCalculationVolume'] = generateDailyRenewalCalculationVolumeDataFromDb($pdo, $xubaoTable, $yuanshujuTable, $currentDateTime);
 

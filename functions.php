@@ -301,31 +301,76 @@ function generateRecentMonthlyDataFromDb(PDO $pdo, $xubaoTable, $yuanshujuTable,
  * @param DateTime $currentDateObj 当前日期对象。
  * @return array 包含日期、本年数据和上年数据的数组。
  */
-function generateYearOnYearDailyComparisonDataFromDb(PDO $pdo, $yuanshujuTable, DateTime $currentDateObj) {
+function generateYearOnYearDailyComparisonDataFromDb(PDO $pdo, $xubaoTable, $yuanshujuTable, DateTime $currentDateObj) {
     $dates = [];
     $currentYearData = [];
     $lastYearData = [];
 
+    $currentDateStr = $currentDateObj->format('Y-m-d');
+    $lastYearDateStr = (clone $currentDateObj)->modify('-1 year')->format('Y-m-d');
+
+    // 验证日期参数
+    if (empty($currentDateStr) || empty($lastYearDateStr)) {
+        throw new InvalidArgumentException('日期参数不能为空');
+    }
+
+    // 本年数据：xubao表支付日期前30天
+    // 统计车牌号、车架号/VIN码、发动机号至少一个不为空的记录数
+    $stmtCurrentYear = $pdo->prepare("
+        SELECT COUNT(
+            CASE WHEN (车牌号 IS NOT NULL OR `车架号/VIN码` IS NOT NULL OR 发动机号 IS NOT NULL) 
+            THEN 1 ELSE NULL END
+        ) 
+        FROM {$xubaoTable} 
+        WHERE 支付日期 BETWEEN DATE_SUB(?, INTERVAL 30 DAY) AND ?
+    ");
+    error_log('Executing current year query with params: ' . $currentDateStr);
+    if (!$stmtCurrentYear->execute([$currentDateStr, $currentDateStr])) {
+        $error = $stmtCurrentYear->errorInfo();
+        throw new PDOException("Current year query failed: " . $error[2]);
+    }
+    $currentYearCount = (int)$stmtCurrentYear->fetchColumn();
+
+    // 上年同期数据：yuanshuju表上年同期
+    // 统计车牌号、车架号/VIN码、发动机号至少一个不为空的记录数
+    $stmtLastYear = $pdo->prepare("
+        SELECT COUNT(
+            CASE WHEN (车牌号 IS NOT NULL OR `车架号/VIN码` IS NOT NULL OR 发动机号 IS NOT NULL) 
+            THEN 1 ELSE NULL END
+        ) 
+        FROM {$yuanshujuTable} 
+        WHERE 支付日期 BETWEEN DATE_SUB(?, INTERVAL 30 DAY) AND ?
+    ");
+    error_log('Executing last year query with params: ' . $lastYearDateStr);
+    if (!$stmtLastYear->execute([$lastYearDateStr, $lastYearDateStr])) {
+        $error = $stmtLastYear->errorInfo();
+        throw new PDOException("Last year query failed: " . $error[2]);
+    }
+    $lastYearCount = (int)$stmtLastYear->fetchColumn();
+
+    // 验证参数绑定
+    if ($stmtCurrentYear->errorCode() !== '00000') {
+        $errorInfo = $stmtCurrentYear->errorInfo();
+        error_log('Current year query error: ' . json_encode($errorInfo));
+        throw new PDOException('Current year query failed: ' . $errorInfo[2]);
+    }
+    if ($stmtLastYear->errorCode() !== '00000') {
+        $errorInfo = $stmtLastYear->errorInfo();
+        error_log('Last year query error: ' . json_encode($errorInfo));
+        throw new PDOException('Last year query failed: ' . $errorInfo[2]);
+    }
+
+    // 生成30天的日期序列（保持与原函数相同的返回结构）
     $tempDate = clone $currentDateObj;
-
-    $stmtCurrentYear = $pdo->prepare("SELECT COUNT(*) FROM {$yuanshujuTable} WHERE 保险止期 = :dateStr;");
-    $stmtLastYear = $pdo->prepare("SELECT COUNT(*) FROM {$yuanshujuTable} WHERE 保险止期 = :lastYearDateStr;");
-
     for ($i = 0; $i < 30; $i++) {
         $dateStr = $tempDate->format('Y-m-d');
-        $lastYearDateStr = (clone $tempDate)->modify('-1 year')->format('Y-m-d');
-
         array_unshift($dates, $dateStr);
-
-        $stmtCurrentYear->execute([':dateStr' => $dateStr]);
-        array_unshift($currentYearData, (int)$stmtCurrentYear->fetchColumn());
-
-        $stmtLastYear->execute([':lastYearDateStr' => $lastYearDateStr]);
-        array_unshift($lastYearData, (int)$stmtLastYear->fetchColumn());
-
+        array_unshift($currentYearData, $currentYearCount);
+        array_unshift($lastYearData, $lastYearCount);
         $tempDate->modify('-1 day');
     }
 
+    error_log("Year-on-year comparison: current={$currentYearCount}, last={$lastYearCount}");
     return ['dates' => $dates, 'currentYear' => $currentYearData, 'lastYear' => $lastYearData];
 }
 
