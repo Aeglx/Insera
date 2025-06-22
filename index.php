@@ -654,17 +654,25 @@ require_once 'data_processor.php'; // 包含数据处理逻辑
 
         // 函数：复制表格数据到剪贴板
         async function copyTableToClipboard(tableElement, columnsConfig) {
-            let copiedText = '';
+            // 获取模板数据
+            const welcomeMessages = <?php echo file_get_contents('templates/welcome_messages.json'); ?>;
+            const closingMessages = <?php echo file_get_contents('templates/closing_messages.json'); ?>;
+            
+            // 随机选择欢迎语和结束语
+            const randomWelcome = welcomeMessages[Math.floor(Math.random() * welcomeMessages.length)];
+            const randomClosing = closingMessages[Math.floor(Math.random() * closingMessages.length)];
+            
+            let copiedText = randomWelcome + '\n\n';
             const rows = tableElement.querySelectorAll('thead tr, tbody tr');
-            const columnWidths = {}; // To store max width for each column
+            const columnWidths = {}; // 存储每列最大宽度
             
             // 获取复制按钮引用
             const copyBtn = document.getElementById('copyTableButton');
             const originalBtnText = copyBtn.innerHTML;
 
-            // First pass: Calculate max width for each column and collect data
+            // 第一遍：计算每列最大宽度并收集数据
             const allRowData = [];
-            rows.forEach(row => {
+            rows.forEach((row, rowIndex) => {
                 const cells = row.querySelectorAll('th, td');
                 const rowValues = [];
                 cells.forEach((cell, colIndex) => {
@@ -672,57 +680,71 @@ require_once 'data_processor.php'; // 包含数据处理逻辑
                     const columnField = columnsConfig[colIndex] ? columnsConfig[colIndex].field : null;
                     const columnLabel = columnsConfig[colIndex] ? columnsConfig[colIndex].label : null;
 
-
-                    // Apply truncation for '投保人名称' if it's the specific column
-                    if ((columnField === 'applicantName' || columnLabel === '投保人名称') && textContent.length > 5) {
+                    // 首列内容处理（大于5字则截断）
+                    if (colIndex === 0 && textContent.length > 5) {
                         textContent = textContent.substring(0, 5) + '...';
                     }
-                    // For checkbox column in expired table, don't copy checkbox text content
+                    
+                    // 复选框列不复制内容
                     if (cell.querySelector('input[type="checkbox"]')) {
-                        textContent = ''; // Don't copy checkbox text content
+                        textContent = '';
                     }
 
                     rowValues.push(textContent);
                     columnWidths[colIndex] = Math.max(columnWidths[colIndex] || 0, textContent.length);
                 });
                 allRowData.push(rowValues);
+                
+                // 在表头后添加分线符
+                if (rowIndex === 0) {
+                    allRowData.push(['------']);
+                }
             });
 
-            // Second pass: Format text with padding
+            // 第二遍：格式化文本
             allRowData.forEach(rowValues => {
-                rowValues.forEach((text, colIndex) => {
-                    copiedText += text.padEnd(columnWidths[colIndex] + 2); // Add 2 for spacing
-                });
-                copiedText += '\n'; // New line for each row
+                if (rowValues[0] === '------') {
+                    copiedText += '-'.repeat(30) + '\n'; // 分线符
+                } else {
+                    rowValues.forEach((text, colIndex) => {
+                        copiedText += text.padEnd(columnWidths[colIndex] + 2); // 添加间距
+                    });
+                    copiedText += '\n';
+                }
             });
+
+            // 添加结束语
+            copiedText += '\n' + randomClosing;
 
             try {
                 await navigator.clipboard.writeText(copiedText);
                 
-                // 修改按钮样式和文本，不显示系统弹窗
+                // 更新按钮状态
                 copyBtn.innerHTML = '<i class="fas fa-check"></i> 已复制';
-                copyBtn.style.backgroundColor = '#6c757d';
-                copyBtn.style.opacity = '0.7';
-                copyBtn.disabled = true;
+                copyBtn.style.backgroundColor = '#07C160';
+                copyBtn.style.color = 'white';
                 
-                                    // 立即恢复按钮状态
-                                    copyBtn.innerHTML = originalBtnText;
-                                    copyBtn.style.backgroundColor = '';
-                                    copyBtn.style.opacity = '';
-                                    copyBtn.disabled = false;
+                // 2秒后恢复按钮状态
+                setTimeout(() => {
+                    copyBtn.innerHTML = originalBtnText;
+                    copyBtn.style.backgroundColor = '';
+                    copyBtn.style.color = '';
+                }, 2000);
                 
             } catch (err) {
                 console.error('复制失败:', err);
                 
-                // 复制失败时，修改按钮样式和文本，不显示系统弹窗
+                // 更新按钮状态
                 copyBtn.innerHTML = '<i class="fas fa-times"></i> 复制失败';
-                copyBtn.style.backgroundColor = '#dc3545';
+                copyBtn.style.backgroundColor = '#ff4d4f';
+                copyBtn.style.color = 'white';
                 
-                // 6天后恢复按钮状态
+                // 2秒后恢复按钮状态
                 setTimeout(() => {
                     copyBtn.innerHTML = originalBtnText;
                     copyBtn.style.backgroundColor = '';
-                }, 518400000); // 6天 = 6 * 24 * 60 * 60 * 1000 = 518,400,000毫秒
+                    copyBtn.style.color = '';
+                }, 2000);
             }
         }
 

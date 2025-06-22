@@ -106,93 +106,113 @@ function showFeedback(message, element) {
   }, 2000);
 }
 
-async function enhanceTableCopy() {
-  try {
-    // 确保DOM完全加载
-    if (document.readyState !== 'complete') {
-      await new Promise(resolve => window.addEventListener('load', resolve));
+// 示例欢迎语和结束语
+const WELCOME_MESSAGES = [
+  "您好，这是您需要的信息：",
+  "请查收以下内容：",
+  "这是您请求的数据："
+];
+
+const CLOSING_MESSAGES = [
+  "感谢您的使用！",
+  "如有疑问请随时联系。",
+  "祝您工作愉快！"
+];
+
+function getRandomMessage(messages) {
+  return messages[Math.floor(Math.random() * messages.length)];
+}
+
+function copyToClipboard(text) {
+  return new Promise((resolve, reject) => {
+    // 方法1: 优先尝试Clipboard API
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(text).then(resolve).catch(() => {
+        // 如果Clipboard API失败，回退到方法2
+        fallbackCopy(text) ? resolve() : reject();
+      });
+    } else {
+      // 直接使用回退方法
+      fallbackCopy(text) ? resolve() : reject();
     }
+  });
+}
 
-    // 确保模板加载
-    if (!approvedTemplate) approveTemplate('wxwork');
+function fallbackCopy(text) {
+  try {
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = 0;
+    document.body.appendChild(textarea);
+    textarea.select();
     
-    // 加载消息模板
-    await loadTemplates();
-    console.log('消息模板加载完成');
+    const success = document.execCommand('copy');
+    document.body.removeChild(textarea);
+    return success;
+  } catch (err) {
+    console.error('回退复制失败:', err);
+    return false;
+  }
+}
 
-    // 添加按钮样式
-    const style = document.createElement('style');
-    style.textContent = `
-      .copied-btn {
-        background-color: #07C160 !important;
-        color: white !important;
-      }
-    `;
-    document.head.appendChild(style);
+function enhanceTableCopy() {
+  // 初始化按钮样式
+  const style = document.createElement('style');
+  style.textContent = `
+    .copy-btn.copied {
+      background-color: #07C160 !important;
+      color: white !important;
+      transition: all 0.3s;
+    }
+    .copy-btn.error {
+      background-color: #ff4d4f !important;
+      color: white !important;
+      transition: all 0.3s;
+    }
+  `;
+  document.head.appendChild(style);
 
-    // 调试输出
-    console.log('初始化复制功能，绑定点击事件...');
-
-    document.addEventListener('click', async function(e) {
-      console.log('点击事件触发，目标:', e.target);
-      
-      // 统一使用copy-btn类选择器
-      const btn = e.target.closest('.copy-btn');
-      if (!btn) return;
-      
-      console.log('找到复制按钮:', btn);
-      
-      // 查找关联表格
+  document.addEventListener('click', async function(e) {
+    const btn = e.target.closest('.copy-btn');
+    if (!btn) return;
+    
+    const originalText = btn.textContent;
+    const originalClass = btn.className;
+    
+    try {
       const table = btn.closest('table');
       if (!table) {
-        console.error('未找到关联表格');
-        showFeedback('未找到表格', btn);
-        return;
+        throw new Error('未找到表格');
       }
-      console.log('找到关联表格:', table);
 
-      try {
-        // 获取完整内容
-        const welcome = getRandomWelcome();
-        const closing = getRandomClosing();
-        const tableText = getTableText(table);
-        
-        console.log('生成的表格内容:', tableText);
+      // 构建完整内容
+      const content = [
+        getRandomMessage(WELCOME_MESSAGES),
+        "",
+        table.innerText.trim(),
+        "",
+        getRandomMessage(CLOSING_MESSAGES)
+      ].join('\n');
 
-        // 构建最终文本
-        const finalText = [
-          welcome,
-          '',
-          tableText,
-          '',
-          closing
-        ].join('\n');
-        
-        console.log('准备复制的内容:', finalText);
-        
-        // 执行复制
-        await navigator.clipboard.writeText(finalText);
-        console.log('内容已复制到剪贴板');
-        
-        // 更新按钮状态
-        btn.classList.add('copied-btn');
-        btn.textContent = '✓ 已复制';
-        
-        // 3秒后恢复按钮状态
-        setTimeout(() => {
-          btn.classList.remove('copied-btn');
-          btn.textContent = '复制';
-        }, 3000);
-        
-      } catch (err) {
-        console.error('复制失败:', err);
-        btn.textContent = '复制失败';
-        setTimeout(() => { btn.textContent = '复制'; }, 3000);
-      }
-    });
-  } catch (err) {
-    console.error('初始化复制功能失败:', err);
-  }
+      // 执行复制
+      await copyToClipboard(content);
+      
+      // 更新按钮状态 - 成功
+      btn.textContent = '✓ 已复制';
+      btn.className = originalClass + ' copied';
+      
+    } catch (err) {
+      console.error('复制失败:', err);
+      btn.textContent = '复制失败';
+      btn.className = originalClass + ' error';
+    } finally {
+      setTimeout(() => {
+        btn.textContent = originalText;
+        btn.className = originalClass;
+      }, 2000);
+    }
+  });
 }
 
 // 初始化
