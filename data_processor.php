@@ -226,7 +226,11 @@ foreach ($intervals as $i => $days) {
 
 // 5. 续保周期天数环形图数据
 // 使用新的函数计算续保周期天数，即保险止期与支付日期之间的天数差
-$renewalCycleData = getRenewalCycleDays($pdo, $xubaoTable, $yuanshujuTable);
+$twoMonthsAgo = (clone $currentDateTime)->modify('-2 months')->format('Y-m-d');
+$renewalCycleData = getRenewalCycleDays($pdo, $xubaoTable, $yuanshujuTable,
+    ["t1.支付日期 BETWEEN :twoMonthsAgo AND :currentDate"],
+    [':twoMonthsAgo' => $twoMonthsAgo, ':currentDate' => $currentDate]
+);
 
 // 格式化数据以适应图表需求
 $mockData['renewalCycle'] = [];
