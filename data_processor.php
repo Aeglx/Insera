@@ -254,15 +254,20 @@ $lastMonthStr = $lastMonthDateObj->format('Y-m');
 $lastYearDateStr = (clone $currentDateTime)->modify('-1 year')->format('Y-m-d');
 
 foreach ($allRecorders as $recorderName) {
-    // 上月保费
-    $lastMonthPremium = getRenewedPremium($pdo, $xubaoTable, $yuanshujuTable,
-        ["DATE_FORMAT(t1.支付日期, '%Y-%m') = :lastMonthStr", "t1.录单员 = :recorderName_lp"], // $whereClauses
-        [':lastMonthStr' => $lastMonthStr, ':recorderName_lp' => $recorderName] // $bindParams
+    // 上月保费 - 统计xubao表中支付日期为上个月的不含税保费合计（全部保费）
+    $lastMonthStart = (clone $currentDateTime)->modify('first day of last month')->format('Y-m-d');
+    $lastMonthEnd = (clone $currentDateTime)->modify('last day of last month')->format('Y-m-d');
+    $lastMonthPremium = getTotalPremium($pdo, $xubaoTable,
+        ["支付日期 BETWEEN :lastMonthStart AND :lastMonthEnd", "录单员 = :recorderName_lp"], // $whereClauses
+        [':lastMonthStart' => $lastMonthStart, ':lastMonthEnd' => $lastMonthEnd, ':recorderName_lp' => $recorderName] // $bindParams
     );
-    // 当月保费
-    $currentMonthPremium = getRenewedPremium($pdo, $xubaoTable, $yuanshujuTable,
-        ["DATE_FORMAT(t1.支付日期, '%Y-%m') = :currentMonthStr", "t1.录单员 = :recorderName_cp"], // $whereClauses
-        [':currentMonthStr' => $currentMonthStr, ':recorderName_cp' => $recorderName] // $bindParams
+    
+    // 当月保费 - 统计xubao表中支付日期为当月的不含税保费合计（全部保费）
+    $currentMonthStart = (clone $currentDateTime)->modify('first day of this month')->format('Y-m-d');
+    $currentMonthEnd = $currentDate;
+    $currentMonthPremium = getTotalPremium($pdo, $xubaoTable,
+        ["支付日期 BETWEEN :currentMonthStart AND :currentMonthEnd", "录单员 = :recorderName_cp"], // $whereClauses
+        [':currentMonthStart' => $currentMonthStart, ':currentMonthEnd' => $currentMonthEnd, ':recorderName_cp' => $recorderName] // $bindParams
     );
 
     // 上月续保量

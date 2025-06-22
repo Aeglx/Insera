@@ -511,6 +511,48 @@ function getRenewalCycleDays($pdo, $xubaoTable, $yuanshujuTable, $whereClauses =
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 
+/**
+ * 获取在特定日期条件下的总保费（包括新单和续保）
+ *
+ * @param PDO $pdo PDO数据库连接对象
+ * @param string $xubaoTable 续保表名
+ * @param array $whereClauses WHERE条件数组
+ * @param array $bindParams 绑定参数数组
+ * @return float 总保费金额
+ */
+function getTotalPremium($pdo, $xubaoTable, $whereClauses = [], $bindParams = []) {
+    $finalWhereSql = implode(" AND ", $whereClauses);
+    
+    $sql = "SELECT IFNULL(SUM(不含税保费), 0) FROM {$xubaoTable}";
+    if (!empty($finalWhereSql)) {
+        $sql .= " WHERE {$finalWhereSql}";
+    }
+    
+    $stmt = $pdo->prepare($sql);
+    
+    // 参数验证
+    $expectedParamsInSql = [];
+    preg_match_all('/(:[a-zA-Z0-9_]+)/', $sql, $matches);
+    if (!empty($matches[0])) {
+        foreach ($matches[0] as $paramName) {
+            $expectedParamsInSql[$paramName] = true;
+        }
+    }
+
+    $finalParams = [];
+    foreach ($bindParams as $paramKey => $paramValue) {
+        if (isset($expectedParamsInSql[$paramKey])) {
+            $finalParams[$paramKey] = $paramValue;
+        }
+    }
+    
+    error_log('Debug SQL (getTotalPremium): ' . $sql);
+    error_log('Debug Params (getTotalPremium): ' . json_encode($finalParams));
+    
+    $stmt->execute($finalParams);
+    return (float)$stmt->fetchColumn();
+}
+
 function generateRecentQuarterlyDataFromDb(PDO $pdo, $xubaoTable, $yuanshujuTable, DateTime $currentDateObj) {
     $quarters = [];
     $rates = [];
