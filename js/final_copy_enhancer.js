@@ -16,22 +16,48 @@ function approveTemplate(templateName) {
   approvedTemplate = templates[templateName] || templates.default;
 }
 
+let welcomeMessages = [];
+let closingMessages = [];
+
+async function loadTemplates() {
+  try {
+    // 加载欢迎语模板
+    const welcomeResponse = await fetch('templates/welcome_messages.json');
+    welcomeMessages = await welcomeResponse.json();
+    
+    // 加载结束语模板
+    const closingResponse = await fetch('templates/closing_messages.json');
+    closingMessages = await closingResponse.json();
+  } catch (error) {
+    console.error('加载模板失败:', error);
+    // 使用默认值
+    welcomeMessages = [
+      '尊敬的客户您好，这是您的保单信息：',
+      '您好，保单信息如下：',
+      '这是您需要的保单详情：'
+    ];
+    closingMessages = [
+      '以上信息请查收，如有疑问请联系客服。',
+      '感谢您的信任，祝您生活愉快！',
+      '保单信息仅供参考，具体以合同为准。'
+    ];
+  }
+}
+
 function getRandomWelcome() {
-  const welcomes = [
-    '尊敬的客户您好，这是您的保单信息：',
-    '您好，保单信息如下：',
-    '这是您需要的保单详情：'
-  ];
-  return welcomes[Math.floor(Math.random() * welcomes.length)];
+  if (welcomeMessages.length === 0) {
+    console.warn('欢迎语模板未加载，使用默认值');
+    return '您好，这是您的保单信息：';
+  }
+  return welcomeMessages[Math.floor(Math.random() * welcomeMessages.length)];
 }
 
 function getRandomClosing() {
-  const closings = [
-    '以上信息请查收，如有疑问请联系客服。',
-    '感谢您的信任，祝您生活愉快！',
-    '保单信息仅供参考，具体以合同为准。'
-  ];
-  return closings[Math.floor(Math.random() * closings.length)];
+  if (closingMessages.length === 0) {
+    console.warn('结束语模板未加载，使用默认值');
+    return '感谢您的信任，祝您生活愉快！';
+  }
+  return closingMessages[Math.floor(Math.random() * closingMessages.length)];
 }
 
 function getTableText(tableElement) {
@@ -67,9 +93,13 @@ function showFeedback(message, element) {
   }, 2000);
 }
 
-function enhanceTableCopy() {
+async function enhanceTableCopy() {
   // 确保模板加载
   if (!approvedTemplate) approveTemplate('wxwork');
+  
+  // 加载消息模板
+  await loadTemplates();
+  console.log('消息模板加载完成');
 
   document.addEventListener('click', async function(e) {
     // 支持多种按钮选择方式
