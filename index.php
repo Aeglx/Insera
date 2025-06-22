@@ -705,13 +705,11 @@ require_once 'data_processor.php'; // 包含数据处理逻辑
                 copyBtn.style.opacity = '0.7';
                 copyBtn.disabled = true;
                 
-                // 6天后恢复按钮状态
-                setTimeout(() => {
-                    copyBtn.innerHTML = originalBtnText;
-                    copyBtn.style.backgroundColor = '';
-                    copyBtn.style.opacity = '';
-                    copyBtn.disabled = false;
-                }, 518400000); // 6天 = 6 * 24 * 60 * 60 * 1000 = 518,400,000毫秒
+                                    // 立即恢复按钮状态
+                                    copyBtn.innerHTML = originalBtnText;
+                                    copyBtn.style.backgroundColor = '';
+                                    copyBtn.style.opacity = '';
+                                    copyBtn.disabled = false;
                 
             } catch (err) {
                 console.error('复制失败:', err);
