@@ -61,28 +61,41 @@ function getRandomClosing() {
 }
 
 function getTableText(tableElement) {
-  // 验证表格结构
-  const headerRow = tableElement.querySelector('thead tr') || 
-                   tableElement.querySelector('tr:first-child');
-  if (!headerRow) {
-    console.error('表格首行未找到');
+  // 获取所有行
+  const rows = Array.from(tableElement.querySelectorAll('tr'));
+  if (rows.length === 0) {
+    console.error('表格无数据');
     return '';
   }
 
-  // 获取表格文本
-  const tempDiv = document.createElement('div');
-  tempDiv.appendChild(tableElement.cloneNode(true));
-  let tableText = tempDiv.innerText;
-  
-  // 添加分隔线
-  const divider = approvedTemplate.divider;
-  if (tableText.includes('\n')) {
-    tableText = tableText.replace('\n', `\n${divider}\n`);
-  }
+  // 获取每列最大宽度
+  const colWidths = [];
+  rows.forEach(row => {
+    const cells = Array.from(row.querySelectorAll('th, td'));
+    cells.forEach((cell, i) => {
+      const text = cell.innerText.trim();
+      colWidths[i] = Math.max(colWidths[i] || 0, text.length);
+    });
+  });
 
-  // 格式处理
-  tableText = tableText.replace(/\n\s+/g, '\n');
-  return tableText.replace(/\n/g, approvedTemplate.lineBreak);
+  // 格式化每行
+  const formattedRows = rows.map(row => {
+    const cells = Array.from(row.querySelectorAll('th, td'));
+    return cells.map((cell, i) => {
+      const text = cell.innerText.trim();
+      return text.padEnd(colWidths[i], ' ');
+    }).join('  '); // 两空格分隔列
+  });
+
+  // 生成分隔线
+  const divider = '-'.repeat(formattedRows[0].length);
+
+  // 组合结果: 首行 + 分隔线 + 内容行
+  return [
+    formattedRows[0], // 表头
+    divider,
+    ...formattedRows.slice(1) // 数据行
+  ].join('\n');
 }
 
 function showFeedback(message, element) {
@@ -100,6 +113,16 @@ async function enhanceTableCopy() {
   // 加载消息模板
   await loadTemplates();
   console.log('消息模板加载完成');
+
+  // 添加按钮样式
+  const style = document.createElement('style');
+  style.textContent = `
+    .copied-btn {
+      background-color: #07C160 !important;
+      color: white !important;
+    }
+  `;
+  document.head.appendChild(style);
 
   document.addEventListener('click', async function(e) {
     // 支持多种按钮选择方式
