@@ -307,46 +307,71 @@ function generateYearOnYearDailyComparisonDataFromDb(PDO $pdo, $xubaoTable, $yua
     $lastYearData = [];
 
     $currentDateStr = $currentDateObj->format('Y-m-d');
-    $lastYearDateStr = (clone $currentDateObj)->modify('-1 year')->format('Y-m-d');
+    $lastYearDateObj = (clone $currentDateObj)->modify('-1 year');
+    $lastYearDateStr = $lastYearDateObj->format('Y-m-d');
+
+    // 计算日期范围
+    $currentStartDate = (clone $currentDateObj)->modify('-29 days')->format('Y-m-d');
+    $lastYearStartDate = (clone $lastYearDateObj)->modify('-29 days')->format('Y-m-d');
 
     // 验证日期参数
     if (empty($currentDateStr) || empty($lastYearDateStr)) {
         throw new InvalidArgumentException('日期参数不能为空');
     }
 
+    error_log("Current date range: {$currentStartDate} to {$currentDateStr}");
+    error_log("Last year date range: {$lastYearStartDate} to {$lastYearDateStr}");
+
     // 本年数据：xubao表支付日期前30天
-    // 统计车牌号、车架号/VIN码、发动机号至少一个不为空的记录数
+    // 按天统计出单台次，唯一性判断：车架号/VIN码 > 发动机号 > 车牌号
     $stmtCurrentYear = $pdo->prepare("
-        SELECT COUNT(
-            CASE WHEN (车牌号 IS NOT NULL OR `车架号/VIN码` IS NOT NULL OR 发动机号 IS NOT NULL) 
-            THEN 1 ELSE NULL END
-        ) 
+        SELECT 
+            支付日期,
+            COUNT(DISTINCT 
+                COALESCE(`车架号/VIN码`, 发动机号, 车牌号)
+            ) AS 出单台次
         FROM {$xubaoTable} 
         WHERE 支付日期 BETWEEN DATE_SUB(?, INTERVAL 30 DAY) AND ?
+        AND (车牌号 IS NOT NULL OR `车架号/VIN码` IS NOT NULL OR 发动机号 IS NOT NULL)
+        GROUP BY 支付日期
+        ORDER BY 支付日期
     ");
-    error_log('Executing current year query with params: ' . $currentDateStr);
+    error_log('Executing current year daily stats query with params: ' . $currentDateStr);
     if (!$stmtCurrentYear->execute([$currentDateStr, $currentDateStr])) {
         $error = $stmtCurrentYear->errorInfo();
-        throw new PDOException("Current year query failed: " . $error[2]);
+        throw new PDOException("Current year daily stats query failed: " . $error[2]);
     }
-    $currentYearCount = (int)$stmtCurrentYear->fetchColumn();
+    $currentYearData = $stmtCurrentYear->fetchAll(PDO::FETCH_ASSOC);
 
-    // 上年同期数据：yuanshuju表上年同期
-    // 统计车牌号、车架号/VIN码、发动机号至少一个不为空的记录数
-    $stmtLastYear = $pdo->prepare("
-        SELECT COUNT(
-            CASE WHEN (车牌号 IS NOT NULL OR `车架号/VIN码` IS NOT NULL OR 发动机号 IS NOT NULL) 
-            THEN 1 ELSE NULL END
-        ) 
+    // 上年同期数据：yuanshuju表
+    // 按天统计出单台次，唯一性判断：车架号/VIN码 > 发动机号 > 车牌号
+    // 记录完整的SQL查询和参数
+    $lastYearQuery = "
+        SELECT 
+            支付日期,
+            COUNT(DISTINCT 
+                COALESCE(`车架号/VIN码`, 发动机号, 车牌号)
+            ) AS 出单台次
         FROM {$yuanshujuTable} 
         WHERE 支付日期 BETWEEN DATE_SUB(?, INTERVAL 30 DAY) AND ?
-    ");
-    error_log('Executing last year query with params: ' . $lastYearDateStr);
+        AND (车牌号 IS NOT NULL OR `车架号/VIN码` IS NOT NULL OR 发动机号 IS NOT NULL)
+        GROUP BY 支付日期
+        ORDER BY 支付日期
+    ";
+    error_log('Last year query SQL: ' . $lastYearQuery);
+    error_log('Last year query params: ' . print_r([$lastYearDateStr, $lastYearDateStr], true));
+    
+    $stmtLastYear = $pdo->prepare($lastYearQuery);
     if (!$stmtLastYear->execute([$lastYearDateStr, $lastYearDateStr])) {
         $error = $stmtLastYear->errorInfo();
-        throw new PDOException("Last year query failed: " . $error[2]);
+        error_log('Last year query error: ' . print_r($error, true));
+        throw new PDOException("Last year daily stats query failed: " . $error[2]);
     }
-    $lastYearCount = (int)$stmtLastYear->fetchColumn();
+    
+    // 记录查询结果
+    $lastYearData = $stmtLastYear->fetchAll(PDO::FETCH_ASSOC);
+    error_log('Last year query result count: ' . count($lastYearData));
+    $lastYearData = $stmtLastYear->fetchAll(PDO::FETCH_ASSOC);
 
     // 验证参数绑定
     if ($stmtCurrentYear->errorCode() !== '00000') {
@@ -360,18 +385,37 @@ function generateYearOnYearDailyComparisonDataFromDb(PDO $pdo, $xubaoTable, $yua
         throw new PDOException('Last year query failed: ' . $errorInfo[2]);
     }
 
+    // 计算总数
+    $currentYearTotal = array_sum(array_column($currentYearData, '出单台次'));
+    $lastYearTotal = array_sum(array_column($lastYearData, '出单台次'));
+
     // 生成30天的日期序列（保持与原函数相同的返回结构）
     $tempDate = clone $currentDateObj;
+    $currentYearValues = [];
+    $lastYearValues = [];
+    
     for ($i = 0; $i < 30; $i++) {
         $dateStr = $tempDate->format('Y-m-d');
         array_unshift($dates, $dateStr);
-        array_unshift($currentYearData, $currentYearCount);
-        array_unshift($lastYearData, $lastYearCount);
+        
+        // 查找当天数据或使用0
+        $currentDayData = array_filter($currentYearData, function($item) use ($dateStr) {
+            return $item['支付日期'] === $dateStr;
+        });
+        $currentDayCount = !empty($currentDayData) ? current($currentDayData)['出单台次'] : 0;
+        array_unshift($currentYearValues, $currentDayCount);
+        
+        $lastYearDayData = array_filter($lastYearData, function($item) use ($dateStr) {
+            return $item['支付日期'] === $dateStr;
+        });
+        $lastYearDayCount = !empty($lastYearDayData) ? current($lastYearDayData)['出单台次'] : 0;
+        array_unshift($lastYearValues, $lastYearDayCount);
+        
         $tempDate->modify('-1 day');
     }
 
-    error_log("Year-on-year comparison: current={$currentYearCount}, last={$lastYearCount}");
-    return ['dates' => $dates, 'currentYear' => $currentYearData, 'lastYear' => $lastYearData];
+    error_log("Year-on-year comparison: current={$currentYearTotal}, last={$lastYearTotal}");
+    return ['dates' => $dates, 'currentYear' => $currentYearValues, 'lastYear' => $lastYearValues];
 }
 
 /**
