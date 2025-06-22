@@ -431,6 +431,86 @@ function generateDailyRenewedTrendDataFromDb(PDO $pdo, $xubaoTable, $yuanshujuTa
  * @param DateTime $currentDateObj 当前日期对象。
  * @return array 包含季度标签和续保率的数组。
  */
+/**
+ * 计算续保周期天数，即保险止期与支付日期之间的天数差。
+ *
+ * @param PDO $pdo PDO数据库连接对象。
+ * @param string $xubaoTable 续保表名。
+ * @param string $yuanshujuTable 原始数据表名。
+ * @param array $whereClauses 包含要添加到WHERE子句的SQL片段数组。
+ * @param array $bindParams 所有命名参数的键值对数组。
+ * @return array 包含续保周期天数分类及其对应数量的数组。
+ */
+function getRenewalCycleDays($pdo, $xubaoTable, $yuanshujuTable, $whereClauses = [], $bindParams = []) {
+    $allWhereClauses = ["t1.支付日期 BETWEEN DATE_SUB(t2.保险止期, INTERVAL 60 DAY) AND t2.保险止期"];
+    if (!empty($whereClauses)) {
+        $allWhereClauses = array_merge($allWhereClauses, $whereClauses);
+    }
+
+    $finalWhereSql = implode(" AND ", $allWhereClauses);
+
+    $sql = "
+        SELECT
+            CASE
+                WHEN DATEDIFF(t2.保险止期, t1.支付日期) BETWEEN 0 AND 7 THEN '7日内'
+                WHEN DATEDIFF(t2.保险止期, t1.支付日期) BETWEEN 8 AND 15 THEN '15日内'
+                WHEN DATEDIFF(t2.保险止期, t1.支付日期) BETWEEN 16 AND 23 THEN '23日内'
+                WHEN DATEDIFF(t2.保险止期, t1.支付日期) BETWEEN 24 AND 30 THEN '30日内'
+                WHEN DATEDIFF(t2.保险止期, t1.支付日期) BETWEEN 31 AND 45 THEN '45日内'
+                WHEN DATEDIFF(t2.保险止期, t1.支付日期) BETWEEN 46 AND 60 THEN '60日内'
+                ELSE '超出范围'
+            END AS cycle_category,
+            COUNT(*) AS count
+        FROM
+            {$xubaoTable} t1
+        JOIN
+            {$yuanshujuTable} t2 ON t1.`车架号/VIN码` = t2.`车架号/VIN码` AND t1.发动机号 = t2.发动机号
+    ";
+    
+    if (!empty($finalWhereSql)) {
+        $sql .= " WHERE {$finalWhereSql}";
+    }
+    
+    $sql .= "
+        GROUP BY
+            cycle_category
+        ORDER BY
+            FIELD(cycle_category, '7日内', '15日内', '23日内', '30日内', '45日内', '60日内', '超出范围');
+    ";
+
+    $stmt = $pdo->prepare($sql);
+
+    // --- 严格的参数验证和过滤 ---
+    $expectedParamsInSql = [];
+    preg_match_all('/(:[a-zA-Z0-9_]+)/', $sql, $matches);
+    if (!empty($matches[0])) {
+        foreach ($matches[0] as $paramName) {
+            $expectedParamsInSql[$paramName] = true;
+        }
+    }
+
+    $finalParams = [];
+    foreach ($bindParams as $paramKey => $paramValue) {
+        if (isset($expectedParamsInSql[$paramKey])) {
+            $finalParams[$paramKey] = $paramValue;
+        } else {
+            error_log("Warning in getRenewalCycleDays: Provided parameter '{$paramKey}' is not found in SQL. SQL: '{$sql}'");
+        }
+    }
+
+    foreach ($expectedParamsInSql as $paramName => $bool) {
+        if (!array_key_exists($paramName, $finalParams)) {
+            error_log("Error in getRenewalCycleDays: Required SQL parameter '{$paramName}' is missing. SQL: '{$sql}'");
+        }
+    }
+    // --- 结束参数验证和过滤 ---
+
+    error_log('Debug SQL (getRenewalCycleDays): ' . $sql);
+    error_log('Debug Params (getRenewalCycleDays): ' . json_encode($finalParams));
+    $stmt->execute($finalParams);
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
 function generateRecentQuarterlyDataFromDb(PDO $pdo, $xubaoTable, $yuanshujuTable, DateTime $currentDateObj) {
     $quarters = [];
     $rates = [];

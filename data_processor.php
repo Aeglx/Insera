@@ -225,32 +225,17 @@ foreach ($intervals as $i => $days) {
 
 
 // 5. 续保周期天数环形图数据
+// 使用新的函数计算续保周期天数，即保险止期与支付日期之间的天数差
+$renewalCycleData = getRenewalCycleDays($pdo, $xubaoTable, $yuanshujuTable);
+
+// 格式化数据以适应图表需求
 $mockData['renewalCycle'] = [];
-$stmt = $pdo->prepare("
-    SELECT
-        CASE
-            WHEN DATEDIFF(t1.支付日期, t2.保险止期) BETWEEN -7 AND 0 THEN '7日内续保'
-            WHEN DATEDIFF(t1.支付日期, t2.保险止期) BETWEEN -15 AND -8 THEN '15日内续保'
-            WHEN DATEDIFF(t1.支付日期, t2.保险止期) BETWEEN -23 AND -16 THEN '23日内续保'
-            WHEN DATEDIFF(t1.支付日期, t2.保险止期) BETWEEN -30 AND -24 THEN '30日内续保'
-            WHEN DATEDIFF(t1.支付日期, t2.保险止期) BETWEEN -45 AND -31 THEN '45日内续保'
-            WHEN DATEDIFF(t1.支付日期, t2.保险止期) BETWEEN -60 AND -46 THEN '60日内续保'
-            ELSE '超出范围'
-        END AS name,
-        COUNT(*) AS value
-    FROM
-        {$xubaoTable} t1
-    JOIN
-        {$yuanshujuTable} t2 ON t1.`车架号/VIN码` = t2.`车架号/VIN码` AND t1.发动机号 = t2.发动机号
-    WHERE
-        t1.支付日期 BETWEEN DATE_SUB(t2.保险止期, INTERVAL 60 DAY) AND t2.保险止期
-    GROUP BY
-        name
-    ORDER BY
-        FIELD(name, '7日内续保', '15日内续保', '23日内续保', '30日内续保', '45日内续保', '60日内续保');
-");
-$stmt->execute();
-$mockData['renewalCycle'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
+foreach ($renewalCycleData as $item) {
+    $mockData['renewalCycle'][] = [
+        'name' => $item['cycle_category'] . '续保',
+        'value' => (int)$item['count']
+    ];
+}
 
 
 // 6. 录单员详情表格数据
