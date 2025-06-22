@@ -1,0 +1,501 @@
+/* assets/css/style.css */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            /* background-color 将由 JavaScript 随机设置 */
+            color: #ecf0f1;
+            background-size: cover;
+            background-attachment: fixed;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: background-color 1s ease-in-out;
+        }
+
+        /* 通用的磨砂玻璃效果和鼠标悬停特效 */
+        .glass-card, .glass-chart-container, .glass-table-container {
+            background-color: rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            transition: all 0.3s ease-in-out;
+            position: relative;
+            overflow: hidden;
+            padding: 20px;
+        }
+
+        .glass-card:hover, .glass-chart-container:hover, .glass-table-container:hover {
+            background-color: rgba(255, 255, 255, 0.25);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+            transform: translateY(-8px);
+            border-color: rgba(255, 255, 255, 0.4);
+        }
+
+        .header {
+            width: calc(100% - 40px);
+            max-width: 1400px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding: 25px 30px;
+            background-color: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            color: #fff;
+            text-shadow: 0 0 8px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease-in-out;
+        }
+        .header:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+            transform: translateY(-3px);
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 32px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+        }
+        .header h1 i {
+            margin-right: 15px;
+            color: #a8dadc;
+        }
+        .datetime-info {
+            text-align: right;
+            font-size: 17px;
+            line-height: 1.5;
+        }
+        .datetime-info #current-datetime {
+            font-weight: bold;
+            color: #fff;
+        }
+        .datetime-info #data-collection-date {
+            color: #eee;
+        }
+
+        hr {
+            border: none;
+            border-top: 1px solid rgba(255, 255, 255, 0.3);
+            width: calc(100% - 40px);
+            max-width: 1400px;
+            margin: 20px 0 40px 0;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            gap: 25px;
+            width: calc(100% - 40px);
+            max-width: 1400px;
+        }
+        .card-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 25px;
+        }
+
+        /* 单个数字卡片的样式，应用磨砂玻璃效果 */
+        .card {
+            padding: 25px 20px;
+            height: auto;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .card .value {
+            font-size: 38px;
+            font-weight: 700;
+            color: #8be9fd;
+            text-shadow: 0 0 10px rgba(139, 233, 253, 0.5);
+            margin-bottom: 8px;
+        }
+        .card .label {
+            font-size: 18px;
+            color: #f8f8f2;
+            opacity: 0.9;
+        }
+        .card i {
+            font-size: 30px;
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 10px;
+        }
+        /* 新增：环比负数时的颜色 */
+        .card .value.negative {
+            color: #ff6b6b; /* 红色 */
+            text-shadow: 0 0 10px rgba(255, 107, 107, 0.5);
+        }
+
+
+        /* Chart Row Layouts */
+        .chart-row {
+            display: grid;
+            gap: 25px;
+            margin-top: 25px;
+            grid-template-columns: repeat(3, 1fr);
+        }
+
+        .chart-row.top-charts {
+            grid-template-columns: 2fr 1fr;
+        }
+
+        .chart-row.middle-charts {
+            grid-template-columns: 2fr 1fr;
+        }
+
+        .chart-row.bottom-chart {
+            grid-template-columns: 2fr 1fr;
+        }
+
+        .glass-chart-container.main-chart {
+            min-height: 400px;
+        }
+
+        /* Chart Container Styles */
+        .chart-container {
+            min-height: 350px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: center;
+        }
+        .chart-container h3 {
+            margin-top: 5px;
+            color: #fff;
+            text-align: center;
+            margin-bottom: 20px;
+            text-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+            font-size: 22px;
+            font-weight: 500;
+        }
+        .chart-container > div[id$="-chart"] {
+            width: 100%;
+            height: 100%;
+            flex-grow: 1;
+        }
+
+        /* Table Container Styles */
+        .table-container {
+            overflow-x: auto;
+            margin-top: 25px;
+            padding: 25px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            color: #f8f8f2;
+            font-size: 15px;
+        }
+        th, td {
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 12px 15px;
+            text-align: left;
+            white-space: nowrap;
+        }
+        th {
+            background-color: rgba(255, 255, 255, 0.1);
+            font-weight: 600;
+            color: #a8dadc;
+        }
+        tbody tr:nth-child(even) {
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+        tbody tr:hover {
+            background-color: rgba(255, 255, 255, 0.15);
+            transform: scale(1.01);
+            transition: background-color 0.2s ease, transform 0.2s ease;
+        }
+
+        /* Chart Title Icon */
+        .chart-title-icon {
+            margin-right: 10px;
+            color: #a8dadc;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.7);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background-color: rgba(44, 62, 80, 0.9);
+            margin: auto;
+            padding: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 15px;
+            width: 80%;
+            max-width: 900px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+            animation: fadeIn 0.3s ease-out;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .modal-content h3 {
+            color: #8be9fd;
+            margin-top: 0;
+            margin-bottom: 25px;
+            font-size: 24px;
+        }
+
+        .modal-body {
+            width: 100%;
+            height: 400px; /* 适用于图表，表格可能会根据内容自动调整高度 */
+            overflow-y: auto; /* 确保表格内容可滚动 */
+        }
+
+        .close-button {
+            color: #aaa;
+            position: absolute;
+            top: 15px;
+            right: 25px;
+            font-size: 35px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .close-button:hover,
+        .close-button:focus {
+            color: #fff;
+            text-decoration: none;
+            transform: rotate(90deg);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* 新增的垂直卡片容器样式 */
+        .vertical-cards-container {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+            height: 100%;
+        }
+
+        .vertical-card {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        /* Ensure tables in modals look good */
+        #detail-modal-table {
+            width: 100%;
+            border-collapse: collapse;
+            color: #f8f8f2;
+            font-size: 14px;
+        }
+        #detail-modal-table th,
+        #detail-modal-table td {
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 10px 12px;
+            text-align: left;
+            white-space: nowrap;
+        }
+        #detail-modal-table th {
+            background-color: rgba(255, 255, 255, 0.1);
+            font-weight: 600;
+            color: #a8dadc;
+        }
+        #detail-modal-table tbody tr:nth-child(even) {
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+        #detail-modal-table tbody tr:hover {
+            background-color: rgba(255, 255, 255, 0.15);
+        }
+
+        /* Checkbox styling */
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+            justify-content: center; /* Center the checkbox */
+            height: 100%; /* Ensure it takes full cell height */
+        }
+        .checkbox-container input[type="checkbox"] {
+            transform: scale(1.2); /* Slightly larger checkbox */
+            cursor: pointer;
+            accent-color: #55efc4; /* Highlight color for checkbox */
+        }
+
+        /* Copy Button Style */
+        .copy-button {
+            background-color: #007bff; /* Primary blue color */
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 8px 15px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            margin-left: 20px; /* Space from title or other elements */
+            display: flex;
+            align-items: center;
+            gap: 5px; /* Space between icon and text */
+        }
+
+        .copy-button:hover {
+            background-color: #0056b3;
+        }
+
+        /* Styles for the modal title container to allow button beside title */
+        .modal-title-container {
+            display: flex;
+            align-items: center;
+            justify-content: center; /* Center title and button */
+            width: 100%;
+            margin-bottom: 25px;
+        }
+        .modal-title-container h3 {
+            margin: 0; /* Remove default margin to align with button */
+        }
+
+        /* Sortable Header Styles */
+        .sortable-header {
+            cursor: pointer;
+            position: relative;
+            padding-right: 20px; /* Space for sort icon */
+        }
+
+        .sortable-header .sort-icon {
+            position: absolute;
+            right: 0px; /* Adjust as needed */
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 0.8em;
+            color: rgba(255, 255, 255, 0.5); /* Faded by default */
+        }
+
+        .sortable-header.asc .sort-icon {
+            color: #8be9fd; /* Brighter when active */
+        }
+
+        .sortable-header.desc .sort-icon {
+            color: #8be9fd; /* Brighter when active */
+        }
+
+        /* Clickable policy count for salesperson table */
+        td.clickable-policy-count {
+            cursor: pointer;
+            text-decoration: underline;
+            color: #8be9fd; /* A lighter color to indicate clickability */
+            font-weight: bold;
+        }
+        td.clickable-policy-count:hover {
+            color: #a8dadc;
+        }
+
+
+        /* Responsive Adjustments */
+        @media (max-width: 992px) {
+            .chart-row.top-charts,
+            .chart-row.middle-charts {
+                grid-template-columns: 1fr;
+            }
+            .glass-chart-container.main-chart {
+                min-height: 350px;
+            }
+            .chart-row {
+                grid-template-columns: 1fr;
+            }
+            .chart-row.bottom-chart {
+                grid-template-columns: 1fr;
+            }
+            .vertical-cards-container {
+                height: auto;
+            }
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+                padding: 15px 20px;
+                width: calc(100% - 20px);
+            }
+            .header h1 {
+                font-size: 26px;
+                margin-bottom: 10px;
+            }
+            .datetime-info {
+                font-size: 14px;
+                text-align: left;
+            }
+            hr {
+                width: calc(100% - 20px);
+                margin: 15px 0 25px 0;
+            }
+            .dashboard-grid, .card-container, .chart-row {
+                gap: 15px;
+                width: calc(100% - 20px);
+            }
+            .card .value {
+                font-size: 30px;
+            }
+            .card .label {
+                font-size: 15px;
+            }
+            .chart-container {
+                min-height: 250px;
+            }
+            .chart-container h3 {
+                font-size: 18px;
+            }
+            th, td {
+                padding: 8px 10px;
+                font-size: 13px;
+            }
+            .modal-content {
+                width: 95%;
+                padding: 20px;
+            }
+            .modal-content h3 {
+                font-size: 20px;
+            }
+            .modal-body {
+                height: 300px;
+            }
+            .modal-title-container {
+                flex-direction: column; /* Stack title and button on small screens */
+                align-items: flex-start;
+            }
+            .modal-title-container h3 {
+                margin-bottom: 10px;
+            }
+            .copy-button {
+                margin-left: 0;
+                width: 100%; /* Full width button on small screens */
+                justify-content: center;
+            }
