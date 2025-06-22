@@ -1,5 +1,6 @@
 <?php
 // index.php
+require_once 'db_setup.php';     // 包含数据库索引和计算逻辑设置
 require_once 'data_processor.php'; // 包含数据处理逻辑
 ?>
 
@@ -656,6 +657,10 @@ require_once 'data_processor.php'; // 包含数据处理逻辑
             let copiedText = '';
             const rows = tableElement.querySelectorAll('thead tr, tbody tr');
             const columnWidths = {}; // To store max width for each column
+            
+            // 获取复制按钮引用
+            const copyBtn = document.getElementById('copyTableButton');
+            const originalBtnText = copyBtn.innerHTML;
 
             // First pass: Calculate max width for each column and collect data
             const allRowData = [];
@@ -693,10 +698,33 @@ require_once 'data_processor.php'; // 包含数据处理逻辑
 
             try {
                 await navigator.clipboard.writeText(copiedText);
-                alert('表格数据已复制到剪贴板！');
+                
+                // 修改按钮样式和文本，不显示系统弹窗
+                copyBtn.innerHTML = '<i class="fas fa-check"></i> 已复制';
+                copyBtn.style.backgroundColor = '#6c757d';
+                copyBtn.style.opacity = '0.7';
+                copyBtn.disabled = true;
+                
+                // 6天后恢复按钮状态
+                setTimeout(() => {
+                    copyBtn.innerHTML = originalBtnText;
+                    copyBtn.style.backgroundColor = '';
+                    copyBtn.style.opacity = '';
+                    copyBtn.disabled = false;
+                }, 518400000); // 6天 = 6 * 24 * 60 * 60 * 1000 = 518,400,000毫秒
+                
             } catch (err) {
                 console.error('复制失败:', err);
-                alert('复制失败，请手动复制。');
+                
+                // 复制失败时，修改按钮样式和文本，不显示系统弹窗
+                copyBtn.innerHTML = '<i class="fas fa-times"></i> 复制失败';
+                copyBtn.style.backgroundColor = '#dc3545';
+                
+                // 6天后恢复按钮状态
+                setTimeout(() => {
+                    copyBtn.innerHTML = originalBtnText;
+                    copyBtn.style.backgroundColor = '';
+                }, 518400000); // 6天 = 6 * 24 * 60 * 60 * 1000 = 518,400,000毫秒
             }
         }
 
