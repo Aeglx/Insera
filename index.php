@@ -1012,8 +1012,9 @@ require_once 'data_processor.php'; // 包含数据处理逻辑
             // 初始化录单员详情表格的排序功能
             makeSortable('recorder-detail-table', mockData.recorderDetails);
 
-            // 初始化业务员详情表格的排序功能
-            makeSortable('salesperson-detail-table', mockData.salespersonDetails);
+            // 初始化业务员详情表格的排序功能，只显示可续台次大于0的数据
+            const filteredSalespersonDetails = mockData.salespersonDetails.filter(row => parseInt(row[1]) > 0);
+            makeSortable('salesperson-detail-table', filteredSalespersonDetails);
 
             // 数字卡片点击事件 (显示详细图表或数据)
             document.getElementById('quarterly-renewal-card').addEventListener('click', () => {
